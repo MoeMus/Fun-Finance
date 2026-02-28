@@ -1,0 +1,69 @@
+.event-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 12px;
+  background: #2a2a2a;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-left: 5px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.event-card:hover {
+  transform: translateX(10px);
+}
+
+.risk-high {
+  border-left-color: #ff4d4d;
+}
+
+.risk-medium {
+  border-left-color: #ffcc00;
+}
+
+.risk-low {
+  border-left-color: #4caf50;
+}
+
+.event-info {
+  flex-grow: 1;
+}
+
+.event-title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #fff;
+}
+
+.event-type {
+  margin: 0.2rem 0;
+  font-size: 0.8rem;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.saving-tip {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #4caf50;
+  font-style: italic;
+}
+
+.event-financials {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.predicted-cost {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #fff;
+}
+
+.event-date {
+  font-size: 0.8rem;
+  color: #666;
+}

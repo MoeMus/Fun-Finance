@@ -1,0 +1,61 @@
+.dashboard-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.header-text h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #fff;
+}
+
+.subtitle {
+  margin: 0.5rem 0 0;
+  color: #888;
+}
+
+.burn-indicator {
+  text-align: right;
+  background: #1a1a1a;
+  padding: 1rem 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.burn-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 1px;
+}
+
+.burn-amount {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ff4d4d;
+}
+
+.tamagotchi-teaser {
+  margin-top: 3rem;
+  padding: 1.5rem;
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px dashed #4caf50;
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+}
+
+.text-right {
+  text-align: right;
+}
