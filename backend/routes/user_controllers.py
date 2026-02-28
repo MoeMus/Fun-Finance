@@ -1,6 +1,6 @@
 from flask import Blueprint
-from backend.services import user_service
-from backend.routes.authentication_decorator import authenticate_token
+from services import user_service
+from routes.authentication_decorator import authenticate_token
 
 user_api_route = Blueprint('user', __name__, url_prefix='/users')
 
