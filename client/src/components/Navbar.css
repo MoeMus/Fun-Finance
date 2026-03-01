@@ -1,0 +1,38 @@
+.dragon-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 4rem;
+  background: #fff;
+  color: #0047AB;
+  font-family: 'BoldPixels', sans-serif;
+  border-bottom: 4px solid #f0f0f0;
+}
+
+.nav-logo {
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  gap: 3rem;
+}
+
+.nav-item {
+  text-decoration: none;
+  color: #000;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+  padding-bottom: 4px;
+  border-bottom: 6px solid transparent;
+}
+
+.nav-item.active {
+  color: #0047AB;
+  border-bottom-color: #0047AB;
+}
+
+.nav-item:hover {
+  color: #0047AB;
+}
