@@ -22,6 +22,16 @@ then on `Generate New Private Key`. This downloads a JSON file which needs to be
 
 To run the backend, make sure you are in the `backend` directory and download the requirements with `pip install -r requirements.txt` (virtual environments preferred), and then run `flask run`
 
+## Gemini API Setup
+
+Dragon Vault uses the Gemini 2.5 Flash model for financial behavioral analysis.
+
+1.  **Get an API Key:** Visit [Google AI Studio](https://aistudio.google.com/) and create a new API key.
+2.  **Configure:** In the `backend/secrets` directory, add the following line to your `.env` file:
+    ```env
+    GEMINI_API_KEY=your_gemini_api_key_here
+    ```
+
 ## Frontend Setup
 
 Ensure you have a `Node.js` version greater than 20.19+ to run Vite
