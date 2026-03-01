@@ -149,7 +149,7 @@ def damage_dragon(uid: str, damage: int) -> Dict[str, Any]:
     return _run(tx)
 
 
-def update_dragon_mood(uid: str, mood: Dict[str, Any]) -> Dict[str, Any]:
+def update_dragon_mood(uid: str, mood: Dict[str, Any], times: int | None = None) -> Dict[str, Any]:
     """
     - Transactional
     - Only accepts mood flags from client (sad/hungry/lonely/bored/dirty)
@@ -188,7 +188,11 @@ def update_dragon_mood(uid: str, mood: Dict[str, Any]) -> Dict[str, Any]:
                 penalty += 25
 
         cur = int(dragon.get("current_health", 0))
-        dragon["current_health"] = max(cur - penalty, 0)
+
+        if times:
+            dragon["current_health"] = max(cur - times*penalty, 0)
+        else:
+            dragon["current_health"] = max(cur - penalty, 0)
 
         transaction.set(
             ref,

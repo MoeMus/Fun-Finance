@@ -70,6 +70,17 @@ def update_dragon_mood_controller():
         return dragon_service.update_dragon_mood(uid, mood), 200
 
 
+@dragon_api_route.route('/update-mood/stack', methods=['POST'])
+@authenticate_token
+def update_dragon_mood_controller():
+
+    uid = auth_service.get_uid_from_token()
+
+    mood = request.get_json()["mood"]
+    times = request.get_json()["times"]
+    return dragon_service.update_dragon_mood(uid, mood, times), 200
+
+
 @dragon_api_route.route('/bury', methods=['POST'])
 @authenticate_token
 def bury_dragon_controller():

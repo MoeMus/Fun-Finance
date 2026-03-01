@@ -26,6 +26,7 @@ function DragonDashboard() {
   useEffect(()=>{
     if (dragon) {
       updateMoodMapFromObject();
+
     }
   }, [dragon])
 

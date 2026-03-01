@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, serverTimestamp, getDoc } from "firebase/firestore";
 import { auth } from "../firebase.js";
 import "./LoginStyles.css"
 import { useSelector, useDispatch } from 'react-redux'
@@ -39,6 +39,13 @@ function LoginPage() {
                 // ✅ Update last_login_date in Firestore
                 const userRef = doc(db, "users", user.uid);
 
+                const userSnap = await getDoc(userRef);
+                let last_login = null;
+
+                if (userSnap.exists()) {
+                  last_login = userSnap.data().last_login_date;
+                }
+
                 await updateDoc(userRef, {
                     last_login_date: serverTimestamp()
                 });
@@ -47,7 +54,8 @@ function LoginPage() {
                 const token = await user.getIdToken();
 
                 dispatch(setAuthToken({
-                    access_token: token
+                    access_token: token,
+                    last_login_date: last_login
                 }));
             }
 

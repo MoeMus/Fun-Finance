@@ -88,6 +88,39 @@ async function random_event(access_token, action) {
   const dragon_data = await response.json();
 
   return dragon_data;
+
 }
 
-export {feed_dragon, play_with_dragon, pet_dragon, wash_dragon, random_event}
+async function apply_prev_days_effects (access_token, last_login_date, mood){
+  const lastLoginDate = last_login_date.toDate();
+  const now = new Date();
+
+  const diffMs = now - lastLoginDate; // difference in milliseconds
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 1) return;
+
+  let dragon_data;
+
+  const response = await fetch('https://127.0.0.1:5000/dragon/update-mood/stack', {
+    method: 'POST',
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${access_token}`
+    },
+    body: JSON.stringify({ ...mood, times: diffDays })
+  });
+
+  if (!response.ok) {
+    const error_msg = await response.json();
+    throw new Error(error_msg.error);
+  }
+
+  dragon_data = await response.json();
+
+  return dragon_data;
+
+}
+
+
+export {feed_dragon, play_with_dragon, pet_dragon, wash_dragon, random_event, apply_prev_days_effects}
