@@ -1,0 +1,198 @@
+@import url('https://fonts.cdnfonts.com/css/boldpixels');
+
+.dragon-vault-page {
+  --nav-blue: #0047AB;
+  --bg-orange: #FF8C00;
+  --bg-yellow: #FFD700;
+  --panel-blue: #D9E9F0;
+  --text-blue: #003366;
+  --btn-blue: #0056b3;
+  
+  font-family: 'BoldPixels', sans-serif;
+  min-height: 100vh;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  
+  /* Pixel-font smoothing fixes */
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+}
+
+/* Navbar */
+.dragon-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0rem 4rem;
+  background: #fff;
+  color: var(--nav-blue);
+}
+
+.nav-logo {
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.nav-links {
+  display: flex;
+  gap: 3rem;
+}
+
+.nav-item {
+  text-decoration: none;
+  color: #000;
+  font-size: 1.5rem;
+  transition: color 0.2s;
+}
+
+.nav-item.active {
+  color: var(--nav-blue);
+  border-bottom: 6px solid var(--nav-blue);
+  padding-bottom: 4px;
+}
+
+/* Main Container with Scale Pattern */
+.dragon-main-container {
+  flex-grow: 1;
+  background: linear-gradient(135deg, var(--bg-orange), var(--bg-yellow));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Dragon Scale Pattern Overlay */
+.dragon-main-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image: radial-gradient(circle at 100% 100%, transparent 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1) 60%, transparent 60%);
+  background-size: 40px 40px;
+  opacity: 0.3;
+}
+
+/* The Stage Card */
+.dragon-stage-card {
+  width: 90%;
+  max-width: 1200px;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stage-split {
+  display: flex;
+  background: #000;
+  border: 8px solid #000;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.dragon-scene-view {
+  flex: 2;
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-height: 400px;
+}
+
+.dragon-mood-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mood-emoji {
+  font-size: 8rem;
+  animation: dragon-float 3s ease-in-out infinite;
+}
+
+.mood-display-text {
+  font-size: 2rem;
+  color: #fff;
+  letter-spacing: 2px;
+}
+
+.dragon-stats-panel {
+  flex: 1;
+  background: var(--panel-blue);
+  padding: 2.5rem;
+  color: var(--text-blue);
+  display: flex;
+  flex-direction: column;
+}
+
+.dragon-type-title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  margin-bottom: 4rem;
+}
+
+.stat-line {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.stat-label {
+  font-size: 2rem;
+  color: var(--nav-blue);
+  flex-shrink: 0;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  word-break: break-word;
+}
+
+.level-up-countdown {
+  margin-top: auto;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-blue);
+}
+
+/* Action Bar */
+.dragon-action-bar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.action-btn {
+  flex: 1;
+  background: var(--btn-blue);
+  color: #fff;
+  border: 4px solid #000;
+  padding: 1.2rem;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.action-btn:hover {
+  background: #004494;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 #000;
+}
+
+.action-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0 0 0 #000;
+}
