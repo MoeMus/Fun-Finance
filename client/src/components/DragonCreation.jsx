@@ -1,8 +1,9 @@
 import {Link} from "react-router-dom";
 import React, {useEffect, useState} from "react";
-import {useSelector} from "react-redux";
+import {useSelector, useDispatch} from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
 import auth_token_slice from "../auth_token_store/auth_token_slice.js";
+import {setDragon} from "../auth_token_store/dragon_slice.js";
 
 function DragonCreationPage() {
 
@@ -10,6 +11,7 @@ function DragonCreationPage() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { access_token } = useSelector((state)=>state.authTokenSlice);
+  const dispatch = useDispatch();
 
   const createDragon = async () => {
 
@@ -33,13 +35,13 @@ function DragonCreationPage() {
 
     if (!response.ok) {
       const error_msg = await response.json();
-
-      console.log(error_msg.error)
-
       setError(error_msg.error);
       return;
     }
 
+    const dragon_data = await response.json();
+
+    dispatch(setDragon({dragon: dragon_data}))
     navigate('/', {replace: true});
 
   }
@@ -56,7 +58,7 @@ function DragonCreationPage() {
         <div className="dragon-stage-card">
           <div className="stage-split">
             <div className="dragon-scene-view">
-              <div className="dragon-mood-display">
+              <div className="dragon-mood-display-creation" >
                 <img className="dragon-egg" src={'../../public/Egg.png'} alt={"Dragon Egg"}/>
               </div>
             </div>
