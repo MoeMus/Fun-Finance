@@ -1,24 +1,25 @@
+from firebase_admin.auth import EmailAlreadyExistsError
 from flask import Blueprint, request, jsonify
 from firebase_admin import auth
-from backend.services.user_service import add_user
+from backend.services import user_service
 
 auth_api_route = Blueprint('auth', __name__, url_prefix='/auth')
 
 
 @auth_api_route.route('/register', methods=['POST'])
 def register_user_controller():
-
+    user = None
     try:
+        data = request.get_json(silent=True) or {}
 
-        data = request.get_json()
+        username = (data.get('username') or '').strip()
+        email = (data.get('email') or '').strip()
+        password = data.get('password') or ''
 
-        username = data['username']
-        email = data['email']
-        password = data['password']
+        if not username or not email or not password:
+            return jsonify({"error": "Missing username, email, or password"}), 400
 
-        if not all([username, email, password]):
-            return jsonify({"error": "Missing name, email, or password"}), 400
-
+        # Create Firebase Auth user first (email uniqueness handled here)
         user = auth.create_user(display_name=username, email=email, password=password)
 
         user_data = {
@@ -27,10 +28,26 @@ def register_user_controller():
             "email": email,
         }
 
-        user_data = add_user(user.uid, user_data)
+        created_user_data = user_service.add_user(user.uid, user_data)
 
-        return user_data, 201
+        custom_token_bytes = auth.create_custom_token(user.uid)
+        custom_token = custom_token_bytes.decode("utf-8")
+
+        return jsonify({"user": created_user_data, "temporary_auth_token": custom_token}), 201
+
+    except EmailAlreadyExistsError:
+        return jsonify({"error": "Email already registered"}), 409
+
+    except ValueError as e:
+        if user is not None:
+            auth.delete_user(user.uid)
+        return jsonify({"error": str(e)}), 400
 
     except Exception as e:
-
-        return jsonify({"error": str(e)}), 400
+        if user is not None:
+            try:
+                auth.delete_user(user.uid)
+            except Exception:
+                pass
+        print("Registration error:", e)
+        return jsonify({"error": "Registration failed"}), 500

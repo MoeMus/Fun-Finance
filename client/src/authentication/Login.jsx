@@ -51,7 +51,6 @@ function LoginPage() {
         }
     }
 
-
     return (
 
         <div className="login-container">
@@ -93,18 +92,13 @@ function LoginPage() {
               </div>
 
               <div className="login-actions">
-                <label className="remember-me">
-                  <input type="checkbox" />
-                  <span>Remember me</span>
-                </label>
-
                 <button className="login-button" type="submit">
                   Sign In
                 </button>
               </div>
 
               <div className="login-links">
-                <button className="link-button" type="button">Create an account</button>
+                <button className="link-button" type="button" onClick={()=>navigate('/signup')}>Create an account</button>
               </div>
             </form>
           </section>

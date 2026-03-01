@@ -2,6 +2,7 @@ import PredictiveDashboard from './components/PredictiveDashboard';
 import './App.css';
 import { Route, Routes } from "react-router";
 import LoginPage from "./authentication/Login.jsx";
+import SignupPage from "./authentication/Signup.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { useSelector } from 'react-redux'
 
@@ -14,6 +15,7 @@ function App() {
       <Routes>
         <Route path={"/"} element={ <ProtectedRoute protected_component={ <PredictiveDashboard /> } isLoggedIn={is_logged_in} /> } />
         <Route path={"/login"} element={ <LoginPage /> } />
+        <Route path={"/signup"} element={ <SignupPage /> } />
       </Routes>
     </div>
   );

@@ -20,4 +20,4 @@ def add_user(uid: str, user: dict):
 
     user_ref.set(user_data, merge=True)
 
-    return jsonify(user_data)
+    return user_data
