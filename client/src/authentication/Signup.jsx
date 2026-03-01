@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import { setAuthToken } from "../auth_token_store/auth_token_slice.js";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { signInWithCustomToken } from "firebase/auth";
 import { auth } from "../firebase.js";
 import './SignupStyles.css'
@@ -14,6 +14,7 @@ function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState()
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const { is_logged_in } = useSelector((state) => state.authTokenSlice);
   useEffect(() => {
@@ -64,7 +65,7 @@ function SignupPage() {
     dispatch(setAuthToken({access_token: access_token}));
 
     } catch (err) {
-      setError(err);
+      setError(err.message);
     }
 
   }
