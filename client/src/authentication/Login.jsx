@@ -61,7 +61,7 @@ function LoginPage() {
       <div className="dv-page dragon-vault-signup-page">
 
         <header className="dv-header">
-          <h1 className="dv-title">Dragon vault</h1>
+          <h1 className="dv-title">Dragon Vault</h1>
         </header>
 
         <main className="dv-hero dragon-main-container-with-scales">
