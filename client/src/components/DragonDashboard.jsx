@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import './DragonDashboard.css';
 import { useDispatch, useSelector } from "react-redux";
-import {setDragon} from "../auth_token_store/dragon_slice.js";
+import {setDragon, removeDragon} from "../auth_token_store/dragon_slice.js";
 import {feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_events.jsx";
+import {useNavigate} from "react-router-dom";
 
 function DragonDashboard() {
 
@@ -12,6 +13,8 @@ function DragonDashboard() {
   const { access_token } = useSelector((state) => state.authTokenSlice);
   const dispatch = useDispatch();
   const [activeMaintenanceMoods, setActiveMaintenanceMoods] = useState(new Map([]))
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(()=>{
     if (!is_dragon_loaded) {
@@ -38,7 +41,6 @@ function DragonDashboard() {
             newMap.set(key, true);
           }
         });
-        console.log(newMap)
         return newMap;
       });
     }
@@ -65,7 +67,25 @@ function DragonDashboard() {
       const dragon_data = await QueryFunction(access_token);
       dispatch(setDragon({dragon: dragon_data}));
     } catch (err) {
-      console.error(err)
+      setError(err);
+    }
+  }
+
+  const bury_dragon = async () => {
+
+    const response = await fetch('http://127.0.0.1:5000/dragon/bury', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error_msg = await response.json();
+      setError(error_msg.error)
+    } else {
+      dispatch(removeDragon);
+      navigate('/create-dragon', {replace: true});
     }
 
   }
@@ -133,7 +153,8 @@ function DragonDashboard() {
                 :
 
                 <div className="stat-line">
-                  <span className="stat-label"> Your Dragon has Died </span>
+                  { dragon.evolution === 'egg' ?  <span className="stat-label"> {dragon.name} has Cracked </span> :
+                    <span className="stat-label"> {dragon.name} has Died </span>}
                 </div>
 
               }
@@ -142,30 +163,44 @@ function DragonDashboard() {
           </div>
 
           <footer className="dragon-action-bar">
-            <button
-              className={`action-btn ${activeMaintenanceMoods.has('hungry') ? 'alert' : ''}`}
-              onClick={() => updateDragon(feed_dragon)}
-            >
-              FEED
-            </button>
-            <button
-              className={`action-btn ${activeMaintenanceMoods.has('bored') ? 'alert' : ''}`}
-              onClick={() => updateDragon(play_with_dragon)}
-            >
-              PLAY
-            </button>
-            <button
-              className={`action-btn ${activeMaintenanceMoods.has('lonely') ? 'alert' : ''}`}
-              onClick={() => updateDragon(pet_dragon)}
-            >
-              PET
-            </button>
-            <button
-              className={`action-btn ${activeMaintenanceMoods.has('dirty') ? 'alert' : ''}`}
-              onClick={() => updateDragon(wash_dragon)}
-            >
-              WASH
-            </button>
+
+            {dragon.current_health > 0 ?
+              <>
+                <button
+                  className={`action-btn ${activeMaintenanceMoods.has('hungry') ? 'alert' : ''}`}
+                  onClick={() => updateDragon(feed_dragon)}
+                >
+                  FEED
+                </button>
+                <button
+                  className={`action-btn ${activeMaintenanceMoods.has('bored') ? 'alert' : ''}`}
+                  onClick={() => updateDragon(play_with_dragon)}
+                >
+                  PLAY
+                </button>
+                <button
+                  className={`action-btn ${activeMaintenanceMoods.has('lonely') ? 'alert' : ''}`}
+                  onClick={() => updateDragon(pet_dragon)}
+                >
+                  PET
+                </button>
+                <button
+                  className={`action-btn ${activeMaintenanceMoods.has('dirty') ? 'alert' : ''}`}
+                  onClick={() => updateDragon(wash_dragon)}
+                >
+                  WASH
+                </button>
+              </>
+              :
+              <button
+                className={`action-btn`}
+                onClick={() => bury_dragon()}
+              >
+                BURY
+              </button>
+            }
+
+
           </footer>
         </div>
       </main>
