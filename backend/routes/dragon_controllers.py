@@ -132,3 +132,14 @@ def change_dragon_controller():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
+
+@dragon_api_route.route('/dead', methods=['GET'])
+@authenticate_token
+def get_dead_dragon_controller():
+
+    try:
+        uid = auth_service.get_uid_from_token()
+        return jsonify(dragon_service.get_dead_dragons(uid)), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+

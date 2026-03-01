@@ -165,6 +165,20 @@
   pointer-events: none;
 }
 
+.grave-stone {
+  position: absolute;
+  bottom: 0;
+  right: 60%;
+  transform: translateX(-50%);  /* center horizontally */
+
+  height: 30%;                  /* control dragon size */
+  width: 30%;                  /* preserve aspect ratio */
+  object-fit: contain;
+
+  z-index: 2;
+  pointer-events: none;
+}
+
 .mood-emoji {
   font-size: min(12rem, 30vh); /* More aggressive height scaling */
   animation: dragon-float 3s ease-in-out infinite;

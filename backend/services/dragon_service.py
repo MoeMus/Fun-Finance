@@ -299,3 +299,16 @@ def make_dragon(uid: str, action: str):
         return dragon
 
     return _run(tx)
+
+
+def get_dead_dragons(uid):
+
+    dead_dragons = db.collection("dead_dragons").where("user_id", "==", uid)
+    documents = dead_dragons.stream()
+    dead_dragons = []
+
+    if documents:
+        for document in documents:
+            dead_dragons.append(document.to_dict())
+
+    return dead_dragons
