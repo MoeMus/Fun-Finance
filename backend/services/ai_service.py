@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 from google import genai
 from google.genai import types
 import dotenv
@@ -21,25 +22,34 @@ client = None
 if api_key:
     client = genai.Client(api_key=api_key)
 
+# SIMPLE IN-MEMORY CACHE
+# Prevents redundant API calls if the events haven't changed
+ai_cache = {}
+
 def analyze_calendar_events(events):
     """
     Analyzes weekly calendar events for financial impact and causal patterns.
-    Simulates the evolution of a Finance Dragon pet.
     """
     if not api_key:
         return {"events": events, "summary": {"totalPredicted": 0, "status": "under"}}
 
+    # Create a unique hash of the events list to check the cache
+    event_hash = hashlib.md5(json.dumps(events, sort_keys=True).encode()).hexdigest()
+    if event_hash in ai_cache:
+        print("DEBUG: Using cached AI analysis...")
+        return ai_cache[event_hash]
+
     prompt = f"""
     Analyze these calendar events for the week. 
     1. For each event, predict: predictedCost, risk (high/medium/low), and a savingTip.
-    2. Identify 'Causal Patterns' (e.g., 'Late night events leading to expensive convenience spending').
+    2. Identify 'Causal Patterns'.
     3. Based on a weekly budget of $150, determine if the user is 'over' or 'under'.
     
     RULES FOR THE FINANCE-DRAGON:
     - Over budget for 1 week: Dragon becomes 'sad' or 'hungry'.
-    - Over budget for 2 weeks: Dragon 'shrinks' (e.g., Large -> Medium -> Small -> Baby -> Egg).
+    - Over budget for 2 weeks: Dragon 'shrinks'.
     - Under budget for 1 week: Dragon becomes 'happy'.
-    - Under budget for 2 weeks: Dragon 'grows' (e.g., Egg -> Baby -> Small -> Medium -> Large).
+    - Under budget for 2 weeks: Dragon 'grows'.
     - If no activity: Dragon becomes 'bored' or 'lonely'.
     - If lots of 'dirty' risk spending: Dragon becomes 'stinky'.
 
@@ -58,10 +68,9 @@ def analyze_calendar_events(events):
     """
 
     try:
-        # Using Gemini 1.5 Flash for high rate limits (1,500 requests per day)
-        # This fixes the 429 RESOURCE_EXHAUSTED error
+        # Keeping Gemini 2.5 Flash as requested
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction="You are a behavioral financial AI. You analyze calendar events to predict spending and simulate the growth/mood of a digital dragon pet.",
@@ -70,8 +79,81 @@ def analyze_calendar_events(events):
         )
         
         analysis = json.loads(response.text)
+        
+        # Store in cache
+        ai_cache[event_hash] = analysis
         return analysis
         
     except Exception as e:
         print(f"Error calling Gemini: {e}")
         return {"events": events, "summary": {"totalPredicted": 0, "status": "under"}}
+
+def apply_dragon_evolution(hp_delta: int, new_mood: str, insight: str) -> dict:
+    """
+    Applies changes to the dragon's state based on financial performance.
+    """
+    return {
+        "hp_delta": hp_delta,
+        "new_mood": new_mood,
+        "insight": insight,
+        "action_taken": True
+    }
+
+def resolve_day_agent(actual_spending, predicted_spending, events_today, current_stats):
+    """
+    The Agentic Loop: FORCES the AI to act via function calling.
+    """
+    if not api_key:
+        return {"error": "API key missing"}
+
+    sys_instruct = (
+        "You are the Dragon's Guardian. Your ONLY way to respond is by calling the 'apply_dragon_evolution' tool.\n\n"
+        "1. Compare Actual Spending vs Predicted Spending.\n"
+        "2. If Actual > Predicted: Call tool with negative hp_delta and mood 'sad'.\n"
+        "3. If Actual <= Predicted: Call tool with positive hp_delta and mood 'happy'.\n"
+        "4. Your 'insight' should be a punchy message about today's spending habits."
+    )
+    
+    prompt = (
+        f"Actual Spending: ${actual_spending}\n"
+        f"Predicted Spending: ${predicted_spending}\n"
+        f"Today's Events: {json.dumps(events_today)}\n"
+        f"Current Dragon Stats: {json.dumps(current_stats)}"
+    )
+    
+    try:
+        # Use Gemini 2.5 Flash with FORCED tool calling 
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=sys_instruct,
+                tools=[apply_dragon_evolution],
+                tool_config=types.ToolConfig(
+                    function_calling_config=types.FunctionCallingConfig(
+                        mode="ANY",
+                        allowed_function_names=["apply_dragon_evolution"]
+                    )
+                ),
+                temperature=0.1
+            )
+        )
+        
+        # Check for function call
+        if response.function_calls:
+            fc = response.function_calls[0]
+            if fc.name == "apply_dragon_evolution":
+                args = fc.args
+                return {
+                    "status": "success",
+                    "battle_result": "defeat" if args.get("hp_delta", 0) < 0 else "victory",
+                    "hp_delta": args.get("hp_delta", 0),
+                    "new_mood": args.get("new_mood", "happy"),
+                    "insight": args.get("insight", "The battle has ended.")
+                }
+        
+        return {"error": "Agent refused to act."}
+        
+    except Exception as e:
+        print(f"Agent Error: {e}")
+        return {"error": str(e)}
