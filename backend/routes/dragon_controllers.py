@@ -45,17 +45,6 @@ def update_dragon_controller():
     return dragon_service.level_up_dragon(uid), 200
 
 
-@dragon_api_route.route('/damage', methods=['POST'])
-@authenticate_token
-def damage_dragon_controller():
-
-    uid = auth_service.get_uid_from_token()
-
-    damage = request.get_json()["damage"]
-
-    return dragon_service.damage_dragon(uid, damage), 200
-
-
 @dragon_api_route.route('/update-mood', methods=['POST'])
 @authenticate_token
 def update_dragon_mood_controller():
@@ -64,7 +53,11 @@ def update_dragon_mood_controller():
 
     mood = request.get_json()["mood"]
 
-    return dragon_service.update_dragon_mood(uid, mood), 200
+    if mood.get("happy"):
+        dragon_service.level_up_dragon(uid)
+        return dragon_service.update_dragon_mood(uid, mood), 200
+    else:
+        return dragon_service.update_dragon_mood(uid, mood), 200
 
 
 @dragon_api_route.route('/bury', methods=['POST'])
