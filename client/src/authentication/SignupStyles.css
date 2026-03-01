@@ -48,19 +48,6 @@
   display: grid;
   place-items: center;
   padding: 40px 18px 64px;
-  /*!* base *!*/
-  /*background-color: #f6b400;*/
-  /*!* scale pattern layers *!*/
-  /*background-image:*/
-  /*  radial-gradient(circle at 50% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),*/
-  /*  radial-gradient(circle at 0% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),*/
-  /*  radial-gradient(circle at 50% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),*/
-  /*  radial-gradient(circle at 0% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),*/
-  /*  radial-gradient(circle at 50% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px),*/
-  /*  radial-gradient(circle at 0% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px);*/
-  /*background-size: 110px 90px;*/
-  /*background-position: 0 0, 55px 0, 0 0, 55px 0, 0 0, 55px 0;*/
-  /*background-repeat: repeat;*/
   border-top: 1px solid rgba(0,0,0,0.08);
 }
 
