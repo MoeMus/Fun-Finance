@@ -18,7 +18,7 @@ function App() {
         <Route path={"/calendar"} element={ <ProtectedRoute protected_component={ <CalendarView /> } isLoggedIn={is_logged_in} /> } />
         <Route path={"/login"} element={ <LoginPage /> } />
         <Route path={"/signup"} element={ <SignupPage /> } />
-        <Route path={"/dragon-create"} element={<ProtectedRoute protected_component={ <DragonCreationPage /> } isLoggedIn={is_logged_in} /> } />
+        <Route path={"/create-dragon"} element={<ProtectedRoute protected_component={ <DragonCreationPage /> } isLoggedIn={is_logged_in} /> } />
       </Routes>
     </div>
   );

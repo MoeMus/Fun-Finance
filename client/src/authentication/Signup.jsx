@@ -18,7 +18,7 @@ function SignupPage() {
   const { is_logged_in } = useSelector((state) => state.authTokenSlice);
   useEffect(() => {
     if (is_logged_in) {
-      navigate('/', { replace: true });
+      navigate('/create-dragon', { replace: true });
     }
   }, [is_logged_in, navigate, location]);
 
@@ -47,7 +47,9 @@ function SignupPage() {
       });
 
       if (!response.ok) {
-        throw new Error(await response.json());
+        const error_msg = await response.json();
+
+        throw new Error(error_msg.error);
       }
 
       const data = await response.json();

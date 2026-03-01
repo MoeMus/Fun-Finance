@@ -8,15 +8,24 @@ dragon_api_route = Blueprint('dragon_api_route', __name__, url_prefix='/dragon')
 @dragon_api_route.route('/create', methods=['POST'])
 @authenticate_token
 def create_dragon_controller():
+    try:
+        uid = auth_service.get_uid_from_token()
 
-    uid = auth_service.get_uid_from_token()
-    dragon_name = request.get_json()["dragon_name"]
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "Invalid or missing JSON body"}), 400
 
-    if dragon_name is None:
-        return jsonify({"error": "No dragon name provided"}), 400
-    created_dragon = dragon_service.create_dragon(uid, dragon_name)
+        dragon_name = data.get("dragon_name")
+        if not dragon_name:
+            return jsonify({"error": "No dragon name provided"}), 400
 
-    return jsonify(created_dragon), 201
+        created_dragon = dragon_service.create_dragon(uid, dragon_name)
+
+        return jsonify(created_dragon), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
 
 @dragon_api_route.route('/get', methods=['GET'])
 @authenticate_token
@@ -24,7 +33,7 @@ def get_dragon_controller():
 
     uid = auth_service.get_uid_from_token()
 
-    return dragon_service.get_dragon(uid), 200
+    return jsonify(dragon_service.get_dragon(uid)), 200
 
 
 @dragon_api_route.route('/levelup', methods=['POST'])

@@ -1,11 +1,48 @@
 import {Link} from "react-router-dom";
-import React, {useState} from "react";
-
+import React, {useEffect, useState} from "react";
+import {useSelector} from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
+import auth_token_slice from "../auth_token_store/auth_token_slice.js";
 
 function DragonCreationPage() {
 
   const [dragonName, setDragonName] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { access_token } = useSelector((state)=>state.authTokenSlice);
+
+  const createDragon = async () => {
+
+    if (dragonName === '') {
+      setError('A name is required');
+      return;
+    }
+
+    const request = {
+      dragon_name: dragonName
+    };
+
+    const response = await fetch('http://127.0.0.1:5000/dragon/create', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${access_token}`
+      },
+      body : JSON.stringify(request)
+    });
+
+    if (!response.ok) {
+      const error_msg = await response.json();
+
+      console.log(error_msg.error)
+
+      setError(error_msg.error);
+      return;
+    }
+
+    navigate('/', {replace: true});
+
+  }
 
   return (
     <div className="dragon-vault-page">
@@ -20,6 +57,7 @@ function DragonCreationPage() {
           <div className="stage-split">
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
+                <img className="dragon-egg" src={'../../public/Egg.png'} alt={"Dragon Egg"}/>
               </div>
             </div>
 
@@ -31,8 +69,8 @@ function DragonCreationPage() {
                   <input
                     className="dv-input"
                     type="text"
-                    autoComplete="username"
-                    placeholder="username"
+                    autoComplete="Dragon Name"
+                    placeholder="e.g, Smaug"
                     value={dragonName}
                     onChange={(e) => setDragonName(e.target.value)}
                   />
@@ -54,13 +92,17 @@ function DragonCreationPage() {
                   <span className="stat-value">level 4</span>
                 </div>
               </div>
+
+              {error ? <p className="dv-error">{error}</p> : null}
+
             </div>
+
           </div>
 
           <footer className="dragon-action-bar">
             <button
-              disabled={!!dragonName}
               className={`action-btn`}
+              onClick={createDragon}
             >
               CREATE YOUR DRAGON
             </button>

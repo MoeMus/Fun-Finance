@@ -1,28 +1,36 @@
-from flask import jsonify
-
 from backend.services.firebase_service import db
 from backend.services.enums import DragonEvolutionEnum
 from datetime import datetime
 
 
-def get_dragon(uid: str):
-
-    dragon = db.collection('dragons').document(uid).get()
-
-    return jsonify(dragon.to_dict())
+from datetime import datetime
+from backend.services.firebase_service import db
 
 
-def create_dragon(uid: str, dragon_name: str):
-    current_datetime = datetime.now()
-    current_timestamp = current_datetime.timestamp()
+def get_dragon(uid: str) -> dict | None:
+    snap = db.collection("dragons").document(uid).get()
+    if not snap.exists:
+        return None
+    return snap.to_dict()
+
+
+def create_dragon(uid: str, dragon_name: str) -> dict:
+    if not dragon_name or not dragon_name.strip():
+        raise ValueError("Dragon name is required")
+
+    existing = get_dragon(uid)
+    if existing is not None:
+        raise ValueError("You already have a pet dragon")
+
+    current_timestamp = datetime.now().timestamp()
 
     dragon_settings = {
-        "name": dragon_name,
+        "name": dragon_name.strip(),
         "level": 0,
         "max_health": 50,
         "current_health": 50,
         "date_of_birth": current_timestamp,
-        "evolution": DragonEvolutionEnum.EGG,
+        "evolution": DragonEvolutionEnum.EGG.value,   # store string, not Enum
         "next_evolution": 4,
         "user_id": uid,
         "mood": {
@@ -35,13 +43,7 @@ def create_dragon(uid: str, dragon_name: str):
         }
     }
 
-    existing_dragon = get_dragon(uid)
-
-    if existing_dragon:
-
-        raise Exception("You already have a pet dragon")
-
-    db.collection('dragons').collections(uid).set(dragon_settings)
+    db.collection("dragons").document(uid).set(dragon_settings)
     return dragon_settings
 
 
