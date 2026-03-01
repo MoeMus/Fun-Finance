@@ -9,6 +9,7 @@ import {feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_
 
 function DragonDashboard() {
 
+  const [deadDragons, setDeadDragons] = useState([]);
   const { dragon, is_dragon_loaded } = useSelector((state) => state.dragonSlice);
   const { access_token } = useSelector((state) => state.authTokenSlice);
   const dispatch = useDispatch();
@@ -20,7 +21,7 @@ function DragonDashboard() {
     if (!is_dragon_loaded) {
       getDragonData();
     }
-
+    get_dead_dragons();
   }, []);
 
   useEffect(()=>{
@@ -61,14 +62,29 @@ function DragonDashboard() {
 
   }
 
-  const updateDragon = async (QueryFunction) => {
-
+  const updateDragon = async (QueryFunction, action) => {
+    const img = document.getElementById("dragonImage");
+    const original_src = img.src;
+    if (action === 'feed') {
+      img.src = '../../public/SunConureEating2_97c55283-bf0e-4587-8ed3-2e748f642f66.gif'
+    }
+    if (action === 'wash') {
+      img.src = '../../public/bird-shaking-off.gif'
+    }
+    if (action === 'pet') {
+      img.src = '../../public/pigeon-pigeon-petting.gif'
+    }
+    if (action === 'play') {
+      img.src = '../../public/b6JWBih.gif'
+    }
     try {
       const dragon_data = await QueryFunction(access_token);
       dispatch(setDragon({dragon: dragon_data}));
     } catch (err) {
       setError(err);
     }
+
+    img.src = original_src;
   }
 
   const bury_dragon = async () => {
@@ -86,6 +102,24 @@ function DragonDashboard() {
     } else {
       dispatch(removeDragon);
       navigate('/create-dragon', {replace: true});
+    }
+
+  }
+
+  const get_dead_dragons = async () => {
+    const response = await fetch('http://127.0.0.1:5000/dragon/dead', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error_msg = await response.json();
+      setError(error_msg.error);
+    } else {
+      const dead_dragons = await response.json();
+      setDeadDragons(prevState => [ ...dead_dragons])
     }
 
   }
@@ -112,22 +146,22 @@ function DragonDashboard() {
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
                 <img src="../../public/Sunset.png" alt={"sunset"} className="overlay-image"/>
-
+                {deadDragons.length > 0 ? <img className={"grave-stone"} src={'../../public/Gravestone.png'} alt={"gravestone"} /> : null }
                 {dragon.current_health > 0 ?
 
                   <>
                     {dragon.evolution === 'egg' ?
-                      <img src="../../public/Egg.png" alt={"egg"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="../../public/Egg.png" alt={"egg"} className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'baby' ?
-                      <img src="../../public/dragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="../../public/dragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'teen' ?
-                      <img src="../../public/Medium%20Dragon%20FINAL.png" alt={"egg"}
+                      <img id={"dragonImage"} src="../../public/Medium%20Dragon%20FINAL.png" alt={"egg"}
                            className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'adult' ?
-                      <img src="../../public/Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="../../public/Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
                     }
                   </>
                   :
@@ -200,25 +234,25 @@ function DragonDashboard() {
               <>
                 <button
                   className={`action-btn ${activeMaintenanceMoods.has('hungry') ? 'alert' : ''}`}
-                  onClick={() => updateDragon(feed_dragon)}
+                  onClick={() => updateDragon(feed_dragon, 'feed')}
                 >
                   FEED
                 </button>
                 <button
                   className={`action-btn ${activeMaintenanceMoods.has('bored') ? 'alert' : ''}`}
-                  onClick={() => updateDragon(play_with_dragon)}
+                  onClick={() => updateDragon(play_with_dragon, 'play')}
                 >
                   PLAY
                 </button>
                 <button
                   className={`action-btn ${activeMaintenanceMoods.has('lonely') ? 'alert' : ''}`}
-                  onClick={() => updateDragon(pet_dragon)}
+                  onClick={() => updateDragon(pet_dragon, 'pet')}
                 >
                   PET
                 </button>
                 <button
                   className={`action-btn ${activeMaintenanceMoods.has('dirty') ? 'alert' : ''}`}
-                  onClick={() => updateDragon(wash_dragon)}
+                  onClick={() => updateDragon(wash_dragon, 'wash')}
                 >
                   WASH
                 </button>
