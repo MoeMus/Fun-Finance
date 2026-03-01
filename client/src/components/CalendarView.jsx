@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
+import CalendarImport from './CalendarImport';
 import './CalendarView.css';
 
-const CalendarView = ({ events = [] }) => {
-  const now = new Date();
+const CalendarView = () => {
+  // Use PST Timezone to ensure consistency
+  const getPSTDate = () => {
+    const pstString = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+    return new Date(pstString);
+  };
+
+  const now = getPSTDate();
   const monthName = now.toLocaleString('default', { month: 'long' });
   const year = now.getFullYear();
   const currentMonth = now.getMonth();
@@ -11,30 +18,109 @@ const CalendarView = ({ events = [] }) => {
 
   const [selectedDay, setSelectedDay] = useState(todayDate);
   const [todaySpending, setTodaySpending] = useState('0.00');
+  
+  // State for events and imported sources
+  const [events, setEvents] = useState([]);
+  const [importedSources, setImportedSources] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Calculate days in month and starting weekday padding
   const daysInMonth = new Date(year, currentMonth + 1, 0).getDate();
   const firstDayIndex = new Date(year, currentMonth, 1).getDay(); // 0 (Sun) to 6 (Sat)
   
-  // Adjust for Monday start (0=Mon, 6=Sun)
   const paddingCount = firstDayIndex === 0 ? 6 : firstDayIndex - 1;
   const paddingArray = Array.from({ length: paddingCount }, (_, i) => i);
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  const getEnemyForDay = (day) => {
-    const dayEvents = events.filter(e => {
-      const eventDate = new Date(e.date);
-      return eventDate.getDate() === day && eventDate.getMonth() === currentMonth;
+  const handleImportSuccess = async (newEvents, sourceName) => {
+    // Add source to list if not already there
+    if (!importedSources.includes(sourceName)) {
+      setImportedSources(prev => [...prev, sourceName]);
+    }
+
+    // Filter out existing events from this source to avoid duplicates when re-importing
+    const existingOtherEvents = events.filter(e => e.source !== sourceName);
+
+    // Combine events and analyze with AI
+    const combinedEvents = [...existingOtherEvents, ...newEvents];
+    setLoading(true);
+    
+    try {
+      const response = await fetch('http://127.0.0.1:5000/calendar/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: combinedEvents })
+      });
+      const data = await response.json();
+      if (data.events) setEvents(data.events);
+    } catch (error) {
+      console.error("AI Analysis failed:", error);
+      setEvents(combinedEvents);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeSource = (sourceName) => {
+    setImportedSources(prev => prev.filter(s => s !== sourceName));
+    setEvents(prev => prev.filter(e => e.source !== sourceName));
+  };
+
+  const getEventsForDay = (day) => {
+    return events.filter(e => {
+      // Split the "YYYY-MM-DD" string to ensure local timezone parsing doesn't shift the day
+      const eventParts = e.date.split('-');
+      if (eventParts.length !== 3) return false;
+      
+      const eYear = parseInt(eventParts[0], 10);
+      const eMonth = parseInt(eventParts[1], 10) - 1; // 0-indexed month
+      const eDay = parseInt(eventParts[2], 10);
+      
+      return eDay === day && eMonth === currentMonth && eYear === year;
     });
+  };
+
+  const getEnemyForDay = (dayEvents) => {
     if (dayEvents.length === 0) return null;
     
-    const totalCost = dayEvents.reduce((sum, e) => sum + (e.predictedCost || 0), 0);
+    const totalCost = dayEvents.reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0);
     if (totalCost > 100) return 'XL';
     if (totalCost > 50) return 'Large';
     if (totalCost > 20) return 'Medium';
     return 'Small';
+  };
+
+  // Agentic "End Day" Hook
+  const handleEndDay = async () => {
+    const dayEvents = getEventsForDay(selectedDay);
+    const predicted = dayEvents.reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0);
+    const actual = Number(todaySpending) || 0;
+
+    const payload = {
+      actual_spending: actual,
+      predicted_spending: predicted,
+      events_today: dayEvents,
+      current_stats: { hp: 100, level: 7, mood: 'happy' } // Mocked until Redux/Firebase is linked
+    };
+
+    try {
+      const response = await fetch('http://127.0.0.1:5000/calendar/resolve_day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await response.json();
+      
+      if (data.status === 'success') {
+        alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\nDragon Insight: ${data.insight}\n\nHP Changed by: ${data.hp_delta}`);
+      } else {
+        alert("Agent failed to respond.");
+      }
+    } catch (error) {
+      console.error("End Day failed:", error);
+    }
   };
 
   return (
@@ -43,22 +129,36 @@ const CalendarView = ({ events = [] }) => {
       <div className="calendar-main-card">
         {/* Left Side: The Grid */}
         <div className="calendar-grid-section">
-          <h2 className="month-title">{monthName} {year}</h2>
+          <div className="calendar-header-actions">
+            <h2 className="month-title">{monthName} {year}</h2>
+            
+            <div className="import-controls">
+              {importedSources.length > 0 && (
+                <div className="sources-list">
+                  {importedSources.map(s => (
+                    <span key={s} className="source-badge">
+                      {s}
+                      <button className="remove-source-btn" onClick={() => removeSource(s)}>×</button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <CalendarImport onImportSuccess={handleImportSuccess} />
+            </div>
+          </div>
+
           <div className="grid-header">
             {weekDays.map(d => <div key={d} className="weekday-label">{d}</div>)}
           </div>
           <div className="calendar-grid">
-            {/* Filled padding tiles */}
-            {paddingArray.map(p => {
-              const dow = p + 1; // 1=Mon, 2=Tue, etc.
-              return (
-                <div key={`pad-${p}`} className={`calendar-tile padding-tile day-${dow}`}></div>
-              );
-            })}
+            {paddingArray.map(p => (
+              <div key={`pad-${p}`} className={`calendar-tile padding-tile day-${p + 1}`}></div>
+            ))}
             
             {daysArray.map(day => {
-              const dow = ((paddingCount + day - 1) % 7) + 1; // 1=Mon, 7=Sun
-              const enemy = getEnemyForDay(day);
+              const dow = ((paddingCount + day - 1) % 7) + 1;
+              const dayEvents = getEventsForDay(day);
+              const enemy = getEnemyForDay(dayEvents);
               const isToday = day === todayDate;
               const isPast = day < todayDate;
 
@@ -70,6 +170,7 @@ const CalendarView = ({ events = [] }) => {
                 >
                   <span className="day-number">{day}</span>
                   <div className="tile-content">
+                    {/* Background Status Icons */}
                     {isPast && <span className="status-icon success"></span>}
                     {isToday && <span className="dragon-icon">🐲</span>}
                     {!isPast && !isToday && enemy && (
@@ -80,6 +181,16 @@ const CalendarView = ({ events = [] }) => {
                         {enemy === 'XL' && '💀'}
                       </span>
                     )}
+
+                    {/* Mini Event List */}
+                    {dayEvents.length > 0 && (
+                      <div className="tile-events">
+                        {dayEvents.slice(0, 3).map((e, idx) => (
+                          <div key={idx} className="mini-event-title">{e.title}</div>
+                        ))}
+                        {dayEvents.length > 3 && <div className="mini-event-more">+{dayEvents.length - 3} more</div>}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
@@ -89,25 +200,29 @@ const CalendarView = ({ events = [] }) => {
 
         {/* Right Side: Details Sidebar */}
         <div className="calendar-details-sidebar">
-          <h2 className="selected-date">{monthName.substring(0, 3)}. {selectedDay}th</h2>
+          <h2 className="selected-date">{monthName.substring(0, 3)}. {selectedDay}</h2>
           
           <div className="day-tasks">
             <p className="sidebar-label">Scheduled Events:</p>
             <ul className="task-list">
-              {events
-                .filter(e => new Date(e.date).getDate() === selectedDay)
-                .map((e, idx) => (
-                  <li key={idx}>{e.title}</li>
-                ))
-              }
-              {events.filter(e => new Date(e.date).getDate() === selectedDay).length === 0 && 
+              {getEventsForDay(selectedDay).map((e, idx) => (
+                <li key={idx}>
+                  <span className="task-bullet">•</span> 
+                  <span className="task-title">{e.title}</span>
+                  {e.predictedCost !== undefined && <span className="task-cost"> - ${Number(e.predictedCost).toFixed(2)}</span>}
+                </li>
+              ))}
+              {getEventsForDay(selectedDay).length === 0 && 
                 <li className="no-tasks">No events planned</li>
               }
             </ul>
           </div>
 
           <div className="financial-stats">
-            <p>estimated cost: $100</p>
+            <p>estimated cost: ${getEventsForDay(selectedDay)
+              .reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0)
+              .toFixed(2)
+            }</p>
             <p>weekly budget left: $4</p>
           </div>
 
@@ -121,7 +236,7 @@ const CalendarView = ({ events = [] }) => {
                 onChange={(e) => setTodaySpending(e.target.value)}
               />
             </div>
-            <button className="end-day-btn">END DAY</button>
+            <button className="end-day-btn" onClick={handleEndDay}>END DAY</button>
           </div>
         </div>
       </div>

@@ -1,3 +1,49 @@
+.calendar-header-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  padding: 0 1.0rem; /* Added padding left and right */
+}
+
+.import-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.sources-list {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.source-badge {
+  background: #eee;
+  border: 2px solid #000;
+  padding: 4px 8px;
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.remove-source-btn {
+  background: none;
+  border: none;
+  color: #c62828;
+  font-family: 'BoldPixels', sans-serif;
+  margin-left: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0;
+  transition: color 0.1s;
+}
+
+.remove-source-btn:hover {
+  color: #ff0000;
+}
+
 .calendar-page-container {
   height: 100vh;
   width: 100%;
@@ -14,9 +60,10 @@
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-image: radial-gradient(circle at 100% 100%, transparent 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1) 60%, transparent 60%);
-  background-size: 40px 40px;
-  opacity: 0.3;
+  background-image: url('/scale-pattern.png');
+  background-size: 150px;
+  background-repeat: repeat;
+  opacity: 0.4;
   z-index: 0;
   pointer-events: none;
 }
@@ -39,7 +86,7 @@
 /* Grid Section */
 .calendar-grid-section {
   flex: 3;
-  padding: 1rem;
+  padding: 0.8rem;
   border-right: 4px solid #000;
   display: flex;
   flex-direction: column;
@@ -48,7 +95,7 @@
 
 .month-title {
   font-size: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0rem;
   color: #000;
 }
 
@@ -58,35 +105,46 @@
   background: #0047AB;
   color: #fff;
   text-align: center;
-  border: 2px solid #000;
+  border: 4px solid #000;
 }
 
 .weekday-label {
   padding: 0.3rem;
-  font-size: 0.6rem;
-  border-right: 1px solid #000;
+  font-size: 0.8rem;
+  border-right: 4px solid #000;
+}
+
+.weekday-label:nth-child(2),
+.weekday-label:nth-child(4),
+.weekday-label:nth-child(6) {
+  background-color: #c62828;
+}
+
+.weekday-label:last-child {
+  border-right: none;
 }
 
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   flex: 1;
-  border-left: 2px solid #000;
-  border-bottom: 2px solid #000;
+  border-left: 4px solid #000;
+  border-bottom: 4px solid #000;
   min-height: 0;
+  grid-auto-rows: 1fr; /* Force rows to share available height equally */
 }
 
 .calendar-tile {
-  border-right: 2px solid #000;
-  border-bottom: 2px solid #000;
+  border-right: 4px solid #000;
+  border-bottom: 4px solid #000;
   padding: 2px;
   position: relative;
   cursor: pointer;
   transition: transform 0.1s;
   background-color: #fff;
+  min-height: 0; /* Remove fixed min-height to allow shrinking */
   background-size: cover;
   background-position: center;
-  min-height: 0;
 }
 
 /* Day of Week Backgrounds */
@@ -126,15 +184,18 @@
   position: absolute;
   top: 3px;
   left: 3px;
-  z-index: 3;
+  z-index: 4; /* Highest layer for readability */
 }
 
 .tile-content {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
   height: 100%;
   font-size: 1.5rem;
+  padding-top: 1.5rem; /* Make room for the date number */
+  box-sizing: border-box;
 }
 
 .status-icon.success {
@@ -144,7 +205,58 @@
   background-size: contain;
   background-repeat: no-repeat;
   display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3; /* Above events */
 }
+
+.dragon-icon, .enemy-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3; /* Above events */
+}
+
+.tile-events {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  right: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 2; /* Below status icons */
+  font-family: sans-serif;
+  max-height: 60%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.mini-event-title {
+  font-size: 0.55rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #000;
+  padding: 1px 3px;
+  border-radius: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid #ccc;
+  line-height: 1.1;
+}
+
+.mini-event-more {
+  font-size: 0.55rem;
+  color: #666;
+  text-align: center;
+  font-weight: bold;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
+}
+
 
 /* Sidebar Section */
 .calendar-details-sidebar {
@@ -153,7 +265,7 @@
   padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
   color: #003366;
   overflow-y: auto;
 }

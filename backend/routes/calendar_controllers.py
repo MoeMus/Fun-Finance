@@ -36,3 +36,21 @@ def import_calendar():
     except Exception as e:
         return jsonify({"error": f"Failed to parse calendar: {str(e)}"}), 500
 
+@calendar_api_route.route('/resolve_day', methods=['POST'])
+def resolve_day():
+    """
+    Agentic Endpoint: Compares Actual vs Predicted spending to update Dragon Stats via Function Calling.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+
+    actual_spending = data.get('actual_spending', 0)
+    predicted_spending = data.get('predicted_spending', 0)
+    events_today = data.get('events_today', [])
+    current_stats = data.get('current_stats', {"hp": 100, "level": 7, "mood": "happy"})
+
+    agent_result = ai_service.resolve_day_agent(actual_spending, predicted_spending, events_today, current_stats)
+    
+    return jsonify(agent_result)
+
