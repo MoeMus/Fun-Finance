@@ -80,8 +80,10 @@ def _require_dragon(snapshot: firestore.DocumentSnapshot) -> Dict[str, Any]:
         dragon["mood"].setdefault(k, False)
     return dragon
 
+
 def _compute_happy(mood: Dict[str, bool]) -> bool:
     return not (mood.get("sad") or mood.get("hungry") or mood.get("lonely") or mood.get("bored") or mood.get("dirty"))
+
 
 def _clamp_int(x: Any, lo: int, hi: int) -> int:
     try:
@@ -95,45 +97,30 @@ def _clamp_int(x: Any, lo: int, hi: int) -> int:
 # Core functions (transactional)
 # -----------------------------
 
-def level_up_dragon(uid: str) -> Dict[str, Any]:
-    """
-    - Transactional read-modify-write to avoid race conditions
-    - Fixes evolution lookup bug
-    - Uses a monotonic max_health formula (no division-by-zero / negative weirdness)
-    """
-    ref = _dragon_ref(uid)
-    tx = db.transaction()
+def level_up_dragon(uid: str):
+    dragon = db.collection('dragons').document(uid).get().to_dict()
 
-    @firestore.transactional
-    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
-        snap = ref.get(transaction=transaction)
-        dragon = _require_dragon(snap)
+    dragon["level"] += 1
 
-        dragon["level"] = int(dragon.get("level", 0)) + 1
+    # EVOLUTION LOGIC: Every 4 levels, up to level 12
+    if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
+        current_evolution = DragonEvolutionEnum(dragon["evolution"])
+        next_evo_info = DragonEvolutionEnum.get_next_evolution(current_evolution)
 
-        # Example stat growth:
-        # +50 max health each level (simple & predictable)
-        # and if you evolve at 4/8/12, also fully heal.
-        dragon["max_health"] = int(dragon.get("max_health", 100)) + 50
-        dragon["current_health"] = min(
-            int(dragon.get("current_health", dragon["max_health"])) + 50,
-            dragon["max_health"],
-        )
+        if next_evo_info:
+            dragon["evolution"] = next_evo_info[0].value
+            dragon["next_evolution"] = next_evo_info[1]
 
-        # Evolve at levels 4, 8, 12 (and not beyond 12)
-        if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
-            cur_evo = dragon.get("evolution")
-            nxt_evo, nxt_after = DragonEvolutionEnum.get_next_evolution(evolution_type=cur_evo)
-            dragon["evolution"] = nxt_evo
-            dragon["next_evolution"] = nxt_after
-
-            # On evolution, fully heal
+            # Physical Evolution Boost: Increase Max HP and full heal
+            dragon["max_health"] += 100
             dragon["current_health"] = dragon["max_health"]
+    else:
+        # STANDARD LEVEL UP: Only increase the numerical level.
+        # No health changes here to keep evolutions meaningful.
+        pass
 
-        transaction.set(ref, dragon, merge=True)
-        return dragon
-
-    return _run(tx)
+    db.collection('dragons').document(uid).set(dragon, merge=True)
+    return dragon
 
 
 def damage_dragon(uid: str, damage: int) -> Dict[str, Any]:

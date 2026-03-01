@@ -55,35 +55,19 @@ def update_dragon_controller():
         return jsonify({"error": str(e)}), 400
 
 
-@dragon_api_route.route('/damage', methods=['POST'])
-@authenticate_token
-def damage_dragon_controller():
-
-    try:
-        uid = auth_service.get_uid_from_token()
-
-        damage = request.get_json()["damage"]
-
-        return jsonify(dragon_service.damage_dragon(uid, damage)), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-
 @dragon_api_route.route('/update-mood', methods=['POST'])
 @authenticate_token
 def update_dragon_mood_controller():
 
-    try:
+    uid = auth_service.get_uid_from_token()
 
-        uid = auth_service.get_uid_from_token()
+    mood = request.get_json()["mood"]
 
-        mood = request.get_json()["mood"]
-
-        return jsonify(dragon_service.update_dragon_mood(uid, mood)), 200
-
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    if mood.get("happy"):
+        dragon_service.level_up_dragon(uid)
+        return dragon_service.update_dragon_mood(uid, mood), 200
+    else:
+        return dragon_service.update_dragon_mood(uid, mood), 200
 
 
 @dragon_api_route.route('/bury', methods=['POST'])

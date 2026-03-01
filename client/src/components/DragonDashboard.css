@@ -49,6 +49,28 @@
   z-index: 1;
 }
 
+.loading-state {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--bg-orange);
+  color: #fff;
+  font-size: 2rem;
+  font-family: 'BoldPixels', sans-serif;
+}
+
+.action-btn.alert {
+  background: #ff4444;
+  animation: pulse-red 1s infinite;
+}
+
+@keyframes pulse-red {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); background: #ff0000; }
+  100% { transform: scale(1); }
+}
+
 .dragon-egg {
   width: 200px; /* or a percentage, e.g., 100% */
   height: auto; /* automatically adjusts height to maintain ratio */
