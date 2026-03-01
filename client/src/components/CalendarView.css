@@ -135,6 +135,10 @@
 }
 
 .calendar-tile {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  object-position: bottom;
   border-right: 4px solid #000;
   border-bottom: 4px solid #000;
   padding: 2px;
@@ -144,7 +148,7 @@
   background-color: #fff;
   min-height: 0; /* Remove fixed min-height to allow shrinking */
   background-size: cover;
-  background-position: center;
+  background-position: bottom;
 }
 
 /* Day of Week Backgrounds */
