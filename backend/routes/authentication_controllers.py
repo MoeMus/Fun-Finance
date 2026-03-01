@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from firebase_admin import auth
-from backend.services.user_service import add_user
+from services.user_service import add_user
 
 auth_api_route = Blueprint('auth', __name__, url_prefix='/auth')
 

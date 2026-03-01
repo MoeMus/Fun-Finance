@@ -1,5 +1,5 @@
 from flask import jsonify
-from backend.services.firebase_service import db
+from services.firebase_service import db
 
 
 def get_user_data(user_id: str):
