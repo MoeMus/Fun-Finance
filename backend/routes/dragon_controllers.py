@@ -31,46 +31,138 @@ def create_dragon_controller():
 @authenticate_token
 def get_dragon_controller():
 
-    uid = auth_service.get_uid_from_token()
+    try:
 
-    return jsonify(dragon_service.get_dragon(uid)), 200
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.get_dragon(uid)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @dragon_api_route.route('/levelup', methods=['POST'])
 @authenticate_token
 def update_dragon_controller():
 
-    uid = auth_service.get_uid_from_token()
+    try:
 
-    return dragon_service.level_up_dragon(uid), 200
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.level_up_dragon(uid)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @dragon_api_route.route('/damage', methods=['POST'])
 @authenticate_token
 def damage_dragon_controller():
 
-    uid = auth_service.get_uid_from_token()
+    try:
+        uid = auth_service.get_uid_from_token()
 
-    damage = request.get_json()["damage"]
+        damage = request.get_json()["damage"]
 
-    return dragon_service.damage_dragon(uid, damage), 200
+        return jsonify(dragon_service.damage_dragon(uid, damage)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @dragon_api_route.route('/update-mood', methods=['POST'])
 @authenticate_token
 def update_dragon_mood_controller():
 
-    uid = auth_service.get_uid_from_token()
+    try:
 
-    mood = request.get_json()["mood"]
+        uid = auth_service.get_uid_from_token()
 
-    return dragon_service.update_dragon_mood(uid, mood), 200
+        mood = request.get_json()["mood"]
+
+        return jsonify(dragon_service.update_dragon_mood(uid, mood)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 
 @dragon_api_route.route('/bury', methods=['POST'])
 @authenticate_token
 def bury_dragon_controller():
-    uid = auth_service.get_uid_from_token()
 
-    return dragon_service.bury_dragon(uid), 200
+    try:
+
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.bury_dragon(uid)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@dragon_api_route.route('/feed', methods=['POST'])
+@authenticate_token
+def feed_dragon_controller():
+    try:
+
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.perform_dragon_action(uid, "feed")), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@dragon_api_route.route('/play', methods=['POST'])
+@authenticate_token
+def play_with_dragon_controller():
+    try:
+
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.perform_dragon_action(uid, "play")), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@dragon_api_route.route('/pet', methods=['POST'])
+@authenticate_token
+def pet_dragon_controller():
+    try:
+
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.perform_dragon_action(uid, "pet")), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@dragon_api_route.route('/wash', methods=['POST'])
+@authenticate_token
+def wash_dragon_controller():
+    try:
+
+        uid = auth_service.get_uid_from_token()
+
+        return jsonify(dragon_service.perform_dragon_action(uid, "wash")), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@dragon_api_route.route('/change', methods=['POST'])
+@authenticate_token
+def change_dragon_controller():
+
+    try:
+
+        uid = auth_service.get_uid_from_token()
+        action = request.get_json()["action"]
+
+        return jsonify(dragon_service.make_dragon(uid, action)), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 

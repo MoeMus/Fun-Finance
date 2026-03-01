@@ -1,10 +1,12 @@
-from backend.services.firebase_service import db
+from __future__ import annotations
 from backend.services.enums import DragonEvolutionEnum
-from datetime import datetime
-
-
-from datetime import datetime
 from backend.services.firebase_service import db
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
+
+from google.cloud import firestore
+
+from datetime import datetime
 
 
 def get_dragon(uid: str) -> dict | None:
@@ -39,7 +41,7 @@ def create_dragon(uid: str, dragon_name: str) -> dict:
             "dirty": False,
             "hungry": False,
             "lonely": False,
-            "bored": True
+            "bored": False
         }
     }
 
@@ -47,109 +49,267 @@ def create_dragon(uid: str, dragon_name: str) -> dict:
     return dragon_settings
 
 
-def level_up_dragon(uid: str):
-    dragon = db.collection('dragons').document(uid).get().to_dict()
+def _dragon_ref(uid: str) -> firestore.DocumentReference:
+    if not uid or not isinstance(uid, str):
+        raise ValueError("uid must be a non-empty string")
+    return db.collection("dragons").document(uid)
 
-    dragon["level"] += 1
 
-    if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
+def _dead_dragon_ref(uid: str) -> firestore.DocumentReference:
+    if not uid or not isinstance(uid, str):
+        raise ValueError("uid must be a non-empty string")
+    return db.collection("dead_dragons").document(uid)
 
-        dragon["evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[0]
-        dragon["next_evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[1]
-        dragon["max_health"] = 200 + 50 / (dragon["level"] - 12)
-        dragon["current_health"] = dragon["max_health"]
 
-    else:
-
-        dragon["max_health"] += 50
-        dragon["current_health"] += 50
-
-    db.collection('dragons').document(uid).set(dragon, merge=True)
-
+def _require_dragon(snapshot: firestore.DocumentSnapshot) -> Dict[str, Any]:
+    if not snapshot.exists:
+        raise KeyError("Dragon not found")
+    dragon = snapshot.to_dict() or {}
+    # Basic shape sanity checks / defaults
+    dragon.setdefault("level", 1)
+    dragon.setdefault("evolution", None)
+    dragon.setdefault("next_evolution", None)
+    dragon.setdefault("max_health", 100)
+    dragon.setdefault("current_health", dragon["max_health"])
+    dragon.setdefault(
+        "mood",
+        {"happy": True, "sad": False, "hungry": False, "lonely": False, "bored": False, "dirty": False},
+    )
+    # Ensure mood has all keys
+    for k in ["happy", "sad", "hungry", "lonely", "bored", "dirty"]:
+        dragon["mood"].setdefault(k, False)
     return dragon
 
+def _compute_happy(mood: Dict[str, bool]) -> bool:
+    return not (mood.get("sad") or mood.get("hungry") or mood.get("lonely") or mood.get("bored") or mood.get("dirty"))
 
-def damage_dragon(uid: str, damage: int):
-
-    dragon = db.collection('dragons').document(uid).get().to_dict()
-
-    dragon["current_health"] = max(dragon["current_health"] - damage, 0)
-
-    db.collection('dragons').document(uid).set(dragon, merge=True)
-
-    return dragon
-
-
-def update_dragon_mood(uid: str, mood: dict):
-
-    dragon = db.collection('dragons').document(uid).get().to_dict()
-
-    dragon["mood"]["happy"] = mood["happy"]
-
-    if mood["sad"]:
-
-        dragon["mood"]["sad"] = True
-        dragon["mood"]["happy"] = False
-        dragon["current_health"] = max(dragon["current_health"] - 50, 0)
-
-    else:
-
-        dragon["mood"]["sad"] = False
-
-    if mood["hungry"]:
-
-        dragon["mood"]["hungry"] = True
-        dragon["mood"]["happy"] = False
-        dragon["current_health"] = max(dragon["current_health"] - 25, 0)
-
-    else:
-
-        dragon["mood"]["hungry"] = False
-
-    if mood["lonely"]:
-
-        dragon["mood"]["lonely"] = True
-        dragon["mood"]["happy"] = True
-        dragon["current_health"] = max(dragon["current_health"] - 25, 0)
-
-    else:
-
-        dragon["mood"]["lonely"] = False
-
-    if mood["bored"]:
-
-        dragon["mood"]["bored"] = True
-        dragon["mood"]["happy"] = False
-        dragon["current_health"] = max(dragon["current_health"] - 25, 0)
-
-    else:
-
-        dragon["mood"]["bored"] = False
-
-    db.collection('dragons').document(uid).set(dragon, merge=True)
-
-    return dragon
+def _clamp_int(x: Any, lo: int, hi: int) -> int:
+    try:
+        v = int(x)
+    except Exception:
+        v = lo
+    return max(lo, min(hi, v))
 
 
-# Removes the dragon from 'dragons' collection and adds it to the 'dead_dragons' collection
-def bury_dragon(uid):
+# -----------------------------
+# Core functions (transactional)
+# -----------------------------
 
-    dragon = db.collection('dragons').document(uid).get().to_dict()
+def level_up_dragon(uid: str) -> Dict[str, Any]:
+    """
+    - Transactional read-modify-write to avoid race conditions
+    - Fixes evolution lookup bug
+    - Uses a monotonic max_health formula (no division-by-zero / negative weirdness)
+    """
+    ref = _dragon_ref(uid)
+    tx = db.transaction()
 
-    current_datetime = datetime.now()
-    current_timestamp = current_datetime.timestamp()
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = ref.get(transaction=transaction)
+        dragon = _require_dragon(snap)
 
-    db.collection('dragons').document(uid).delete()
+        dragon["level"] = int(dragon.get("level", 0)) + 1
 
-    dead_dragon = {
-        "name": dragon["name"],
-        "level": dragon["level"],
-        "date_of_birth": dragon["date_of_birth"],
-        "date_of_death": current_timestamp,
-        "evolution": dragon["evolution"],
-        "user_id": uid
-    }
+        # Example stat growth:
+        # +50 max health each level (simple & predictable)
+        # and if you evolve at 4/8/12, also fully heal.
+        dragon["max_health"] = int(dragon.get("max_health", 100)) + 50
+        dragon["current_health"] = min(
+            int(dragon.get("current_health", dragon["max_health"])) + 50,
+            dragon["max_health"],
+        )
 
-    db.collection('dragons').add(dead_dragon)
+        # Evolve at levels 4, 8, 12 (and not beyond 12)
+        if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
+            cur_evo = dragon.get("evolution")
+            nxt_evo, nxt_after = DragonEvolutionEnum.get_next_evolution(evolution_type=cur_evo)
+            dragon["evolution"] = nxt_evo
+            dragon["next_evolution"] = nxt_after
 
-    return dead_dragon
+            # On evolution, fully heal
+            dragon["current_health"] = dragon["max_health"]
+
+        transaction.set(ref, dragon, merge=True)
+        return dragon
+
+    return _run(tx)
+
+
+def damage_dragon(uid: str, damage: int) -> Dict[str, Any]:
+    """
+    - Transactional
+    - Validates damage
+    - Clamps current_health at 0
+    """
+    ref = _dragon_ref(uid)
+    tx = db.transaction()
+
+    dmg = _clamp_int(damage, 0, 10_000)
+
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = ref.get(transaction=transaction)
+        dragon = _require_dragon(snap)
+
+        cur = int(dragon.get("current_health", 0))
+        dragon["current_health"] = max(cur - dmg, 0)
+
+        transaction.set(ref, {"current_health": dragon["current_health"]}, merge=True)
+        # Return the updated in-memory dragon view
+        return dragon
+
+    return _run(tx)
+
+
+def update_dragon_mood(uid: str, mood: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    - Transactional
+    - Only accepts mood flags from client (sad/hungry/lonely/bored/dirty)
+    - Computes happy server-side
+    - Applies health penalties once per update based on active negatives
+    """
+    if not isinstance(mood, dict):
+        raise ValueError("mood must be a dict")
+
+    ref = _dragon_ref(uid)
+    tx = db.transaction()
+
+    # Accept only these from client
+    allowed_keys = ["sad", "hungry", "lonely", "bored", "dirty"]
+    incoming = {k: bool(mood.get(k, False)) for k in allowed_keys}
+
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = ref.get(transaction=transaction)
+        dragon = _require_dragon(snap)
+
+        # Update mood flags
+        for k, v in incoming.items():
+            dragon["mood"][k] = v
+
+        # Compute happy (FIX: don’t accept "happy" from client, and lonely should not force happy True)
+        dragon["mood"]["happy"] = _compute_happy(dragon["mood"])
+
+        # Health penalty model (example):
+        # sad: -50, hungry/lonely/bored/dirty: -25 each (only if that flag is True)
+        penalty = 0
+        if dragon["mood"].get("sad"):
+            penalty += 50
+        for k in ["hungry", "lonely", "bored", "dirty"]:
+            if dragon["mood"].get(k):
+                penalty += 25
+
+        cur = int(dragon.get("current_health", 0))
+        dragon["current_health"] = max(cur - penalty, 0)
+
+        transaction.set(
+            ref,
+            {"mood": dragon["mood"], "current_health": dragon["current_health"]},
+            merge=True,
+        )
+        return dragon
+
+    return _run(tx)
+
+
+def bury_dragon(uid: str) -> Dict[str, Any]:
+    """
+    - Transactional: ensures we read the dragon and move it consistently
+    - FIX: writes to dead_dragons collection, not dragons
+    - Stores under same uid (easy lookup)
+    """
+    dragon_doc = _dragon_ref(uid)
+    dead_doc = _dead_dragon_ref(uid)
+    tx = db.transaction()
+
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = dragon_doc.get(transaction=transaction)
+        dragon = _require_dragon(snap)
+
+        now_ts = datetime.now(timezone.utc).timestamp()
+
+        dead_dragon = {
+            "name": dragon.get("name"),
+            "level": dragon.get("level"),
+            "date_of_birth": dragon.get("date_of_birth"),
+            "date_of_death": now_ts,
+            "evolution": dragon.get("evolution"),
+            "user_id": uid,
+        }
+
+        # Write dead dragon, then delete living dragon in the same transaction
+        transaction.set(dead_doc, dead_dragon, merge=True)
+        transaction.delete(dragon_doc)
+
+        return dead_dragon
+
+    return _run(tx)
+
+
+def perform_dragon_action(uid: str, action: str) -> Dict[str, Any]:
+    ref = _dragon_ref(uid)
+    tx = db.transaction()
+
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = ref.get(transaction=transaction)
+        dragon = _require_dragon(snap)
+
+        if action == "feed":
+            dragon["mood"]["hungry"] = False
+
+        if action == "play":
+            dragon["mood"]["bored"] = False
+
+        if action == "pet":
+            dragon["mood"]["lonely"] = False
+
+        if action == "wash":
+            dragon["mood"]["dirty"] = False
+
+        dragon["mood"]["happy"] = _compute_happy(dragon["mood"])
+
+        transaction.set(
+            ref,
+            {"mood": dragon["mood"]},
+            merge=True,
+        )
+        return dragon
+
+    return _run(tx)
+
+
+def make_dragon(uid: str, action: str):
+
+    ref = _dragon_ref(uid)
+    tx = db.transaction()
+
+    @firestore.transactional
+    def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
+        snap = ref.get(transaction=transaction)
+        dragon = _require_dragon(snap)
+
+        if action == "hungry":
+            dragon["mood"]["hungry"] = True
+
+        if action == "bored":
+            dragon["mood"]["bored"] = True
+
+        if action == "lonely":
+            dragon["mood"]["lonely"] = True
+
+        if action == "dirty":
+            dragon["mood"]["dirty"] = True
+
+        dragon["mood"]["happy"] = _compute_happy(dragon["mood"])
+
+        transaction.set(
+            ref,
+            {"mood": dragon["mood"]},
+            merge=True,
+        )
+        return dragon
+
+    return _run(tx)

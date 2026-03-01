@@ -2,52 +2,82 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from './Navbar';
 import './DragonDashboard.css';
+import { useDispatch, useSelector } from "react-redux";
+import {setDragon} from "../auth_token_store/dragon_slice.js";
+import {feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_events.jsx";
 
-const DragonDashboard = ({ summary = {} }) => {
-  const {
-    dragonMood: financialMood = 'happy',
-    dragonSize = 'baby',
-  } = summary;
+function DragonDashboard() {
 
-  // Track maintenance moods (hungry, bored, lonely, stinky)
-  const [activeMaintenanceMoods, setActiveMaintenanceMoods] = useState([]);
+  const { dragon, is_dragon_loaded } = useSelector((state) => state.dragonSlice);
+  const { access_token } = useSelector((state) => state.authTokenSlice);
+  const dispatch = useDispatch();
+  const [activeMaintenanceMoods, setActiveMaintenanceMoods] = useState(new Map([]))
 
-  // Determine the display mood based on precedence rules
-  const getDisplayMood = () => {
-    if (financialMood === 'sad') return 'sad';
-    if (activeMaintenanceMoods.length > 0) return activeMaintenanceMoods[0];
-    return 'happy';
-  };
+  useEffect(()=>{
+    if (!is_dragon_loaded) {
+      getDragonData();
+    }
 
-  const currentMood = getDisplayMood();
-
-  // Maintenance mood trigger logic
-  useEffect(() => {
-    const maintenanceTypes = ['hungry', 'bored', 'lonely', 'stinky'];
-    
-    const checkMoodTriggers = () => {
-      setActiveMaintenanceMoods(prev => {
-        const newMoods = [...prev];
-        maintenanceTypes.forEach(type => {
-          // 10% chance if not already active
-          if (!newMoods.includes(type) && Math.random() < 0.10) {
-            newMoods.push(type);
-          }
-        });
-        return newMoods;
-      });
-    };
-
-    // Run every 5 minutes (300,000 ms)
-    const interval = setInterval(checkMoodTriggers, 300000);
-    
-    return () => clearInterval(interval);
   }, []);
 
-  // Action handlers
-  const handleAction = (moodToClear) => {
-    setActiveMaintenanceMoods(prev => prev.filter(m => m !== moodToClear));
-  };
+  useEffect(()=>{
+    if (dragon) {
+      updateMoodMapFromObject();
+    }
+  }, [dragon])
+
+  function updateMoodMapFromObject() {
+    const moodObj = dragon.mood;
+
+    if (moodObj) {
+      setActiveMaintenanceMoods(() => {
+        const newMap = new Map();
+
+        Object.entries(moodObj).forEach(([key, value]) => {
+          if (value === true) {
+            newMap.set(key, true);
+          }
+        });
+
+        return newMap;
+      });
+    }
+  }
+
+  const getDragonData = async () => {
+
+    const response = await fetch('http://127.0.0.1:5000/dragon/get', {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${access_token}`
+      }
+    });
+
+    const dragon_data = await response.json();
+
+    dispatch(setDragon({dragon: dragon_data}));
+
+  }
+
+  const updateDragon = async (QueryFunction) => {
+
+    try {
+      const dragon_data = await QueryFunction(access_token);
+      dispatch(setDragon({dragon: dragon_data}));
+    } catch (err) {
+      console.error(err)
+    }
+
+  }
+
+  if (!dragon) {
+    return (
+      <div className="dragon-vault-page">
+        <Navbar />
+        <main className="dragon-main-container">Loading...</main>
+      </div>
+    );
+  }
 
   return (
     <div className="dragon-vault-page">
@@ -60,27 +90,21 @@ const DragonDashboard = ({ summary = {} }) => {
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
                 <span className="mood-emoji">
-                  {currentMood === 'happy' && '🐲'}
-                  {currentMood === 'sad' && '🐉'}
-                  {currentMood === 'hungry' && '😋'}
-                  {currentMood === 'bored' && '💤'}
-                  {currentMood === 'lonely' && '🥺'}
-                  {currentMood === 'stinky' && '🤢'}
                 </span>
-                <p className="mood-display-text">{currentMood.toUpperCase()}</p>
+                {/*<p className="mood-display-text">{currentMood.toUpperCase()}</p>*/}
               </div>
             </div>
 
             <div className="dragon-stats-panel">
-              <h2 className="dragon-type-title">{dragonSize.toUpperCase()} DRAGON</h2>
+              <h2 className="dragon-type-title">{dragon.evolution}</h2>
               <div className="stats-list">
                 <div className="stat-line">
                   <span className="stat-label">name:</span>
-                  <span className="stat-value">Banko</span>
+                  <span className="stat-value">{dragon.name}</span>
                 </div>
                 <div className="stat-line">
                   <span className="stat-label">lvl:</span>
-                  <span className="stat-value">7</span>
+                  <span className="stat-value">{dragon.level}</span>
                 </div>
                 <div className="stat-line">
                   <span className="stat-label">hp:</span>
@@ -88,11 +112,13 @@ const DragonDashboard = ({ summary = {} }) => {
                 </div>
                 <div className="stat-line">
                   <span className="stat-label">mood:</span>
-                  <span className="stat-value">{currentMood}</span>
+                  {[...activeMaintenanceMoods.keys()].map((key) => (
+                    <span key={key}>{key}</span>
+                  ))}
                 </div>
                 <div className="stat-line">
                   <span className="stat-label">next evolution:</span>
-                  <span className="stat-value">level 8</span>
+                  <span className="stat-value">level {dragon.next_evolution}</span>
                 </div>
               </div>
 
@@ -104,26 +130,26 @@ const DragonDashboard = ({ summary = {} }) => {
 
           <footer className="dragon-action-bar">
             <button 
-              className={`action-btn ${activeMaintenanceMoods.includes('hungry') ? 'alert' : ''}`}
-              onClick={() => handleAction('hungry')}
+              className={`action-btn ${activeMaintenanceMoods.has('hungry') ? 'alert' : ''}`}
+              onClick={() => updateDragon(feed_dragon)}
             >
               FEED
             </button>
             <button 
-              className={`action-btn ${activeMaintenanceMoods.includes('bored') ? 'alert' : ''}`}
-              onClick={() => handleAction('bored')}
+              className={`action-btn ${activeMaintenanceMoods.has('bored') ? 'alert' : ''}`}
+              onClick={() => updateDragon(play_with_dragon)}
             >
               PLAY
             </button>
             <button 
-              className={`action-btn ${activeMaintenanceMoods.includes('lonely') ? 'alert' : ''}`}
-              onClick={() => handleAction('lonely')}
+              className={`action-btn ${activeMaintenanceMoods.has('lonely') ? 'alert' : ''}`}
+              onClick={() => updateDragon(pet_dragon)}
             >
               PET
             </button>
             <button 
-              className={`action-btn ${activeMaintenanceMoods.includes('stinky') ? 'alert' : ''}`}
-              onClick={() => handleAction('stinky')}
+              className={`action-btn ${activeMaintenanceMoods.has('dirty') ? 'alert' : ''}`}
+              onClick={() => updateDragon(wash_dragon)}
             >
               WASH
             </button>
@@ -132,6 +158,6 @@ const DragonDashboard = ({ summary = {} }) => {
       </main>
     </div>
   );
-};
+}
 
 export default DragonDashboard;
