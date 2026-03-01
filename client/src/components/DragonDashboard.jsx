@@ -18,11 +18,6 @@ function DragonDashboard() {
 
   useEffect(()=>{
     if (!is_dragon_loaded) {
-      if (last_login_date) {
-        (async function (){
-          await apply_prev_days_effects(access_token, last_login_date);
-        })()
-      }
       (async function (){
         await getDragonData();
       })()
