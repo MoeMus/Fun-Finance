@@ -134,7 +134,7 @@ def resolve_day_agent(actual_spending, predicted_spending, events_today, current
         "1. Compare Actual Spending vs Predicted Spending.\n"
         "2. If Actual > Predicted: Call tool with negative hp_delta and mood 'sad'.\n"
         "3. If Actual <= Predicted: Call tool with positive hp_delta and mood 'happy'.\n"
-        "4. Your 'insight' should be a punchy message about today's spending habits in Vancouver."
+        "4. Your 'insight' MUST address the user directly (using 'you', 'your') and be a punchy message about their spending today."
     )
     
     prompt = (

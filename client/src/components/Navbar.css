@@ -23,6 +23,7 @@
 .nav-links {
   display: flex;
   gap: 3vw;
+  align-items: center;
 }
 
 .nav-item {
@@ -41,6 +42,20 @@
 
 .nav-item:hover {
   color: #0047AB;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'BoldPixels', sans-serif;
+  color: #c62828; /* Red to signify logout/danger */
+  padding: 0;
+  border-bottom: 0.6vh solid transparent;
+}
+
+.logout-btn:hover {
+  color: #ff0000;
 }
 
 
