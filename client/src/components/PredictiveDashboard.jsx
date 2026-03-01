@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import EventImpactCard from './EventImpactCard';
 import FinanceDragon from './FinanceDragon';
 import BurnRateChart from './BurnRateChart';
+import CalendarImport from './CalendarImport';
 import './PredictiveDashboard.css';
 
 const PredictiveDashboard = () => {
@@ -15,6 +16,7 @@ const PredictiveDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Initial mock data to show something on first load
   const initialCalendarData = [
     { id: 1, title: "Study Group @ Starbucks", type: "social", date: "2026-03-01" },
     { id: 2, title: "Gym Session", type: "health", date: "2026-03-02" },
@@ -23,28 +25,34 @@ const PredictiveDashboard = () => {
     { id: 5, title: "Night Out with Friends", type: "social", date: "2026-03-06" }
   ];
 
-  useEffect(() => {
-    const fetchAIAnalysis = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/calendar/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ events: initialCalendarData })
-        });
-        const data = await response.json();
-        
-        if (data.events) setEvents(data.events);
-        if (data.summary) setSummary(data.summary);
-      } catch (error) {
-        console.error("Failed to fetch Gemini analysis:", error);
-        setEvents(initialCalendarData.map(e => ({ ...e, predictedCost: 0, risk: 'low' })));
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchAIAnalysis = async (currentEvents) => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/calendar/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ events: currentEvents })
+      });
+      const data = await response.json();
+      
+      if (data.events) setEvents(data.events);
+      if (data.summary) setSummary(data.summary);
+    } catch (error) {
+      console.error("Failed to fetch Gemini analysis:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchAIAnalysis();
+  useEffect(() => {
+    fetchAIAnalysis(initialCalendarData);
   }, []);
+
+  const handleImportSuccess = (newEvents) => {
+    // Combine new events with existing ones and re-analyze
+    const combinedEvents = [...events, ...newEvents];
+    setLoading(true);
+    fetchAIAnalysis(combinedEvents);
+  };
 
   if (loading) return <div className="loading-state">Consulting the Finance Dragon...</div>;
 
@@ -61,14 +69,21 @@ const PredictiveDashboard = () => {
         </div>
       </header>
 
-      <div className="dragon-section">
-        <FinanceDragon mood={summary.dragonMood} size={summary.dragonSize} />
-        <div className="insight-bubble">
-          <p>✨ <strong>Dragon Insight:</strong> {summary.causalInsight}</p>
+      <div className="dashboard-grid">
+        <div className="main-stats">
+          <div className="dragon-section">
+            <FinanceDragon mood={summary.dragonMood} size={summary.dragonSize} />
+            <div className="insight-bubble">
+              <p>✨ <strong>Dragon Insight:</strong> {summary.causalInsight}</p>
+            </div>
+          </div>
+          <BurnRateChart events={events} budget={150} />
+        </div>
+
+        <div className="sidebar-actions">
+          <CalendarImport onImportSuccess={handleImportSuccess} />
         </div>
       </div>
-
-      <BurnRateChart events={events} budget={150} />
 
       <section className="events-list">
         <h3>Upcoming Spending Triggers</h3>

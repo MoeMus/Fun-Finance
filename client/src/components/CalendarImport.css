@@ -1,0 +1,89 @@
+.calendar-import-card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.calendar-import-card h3 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.import-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.import-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.import-row label {
+  font-size: 0.8rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.import-row select, .file-label {
+  background: #2a2a2a;
+  border: 2px solid #444;
+  color: #fff;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-family: 'BoldPixels', sans-serif;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  display: block;
+  text-align: center;
+  border-style: dashed;
+}
+
+.file-label:hover {
+  border-color: #0047AB;
+  background: rgba(0, 71, 171, 0.1);
+}
+
+.import-btn {
+  background: #0047AB;
+  color: #fff;
+  border: none;
+  padding: 1rem;
+  border-radius: 8px;
+  font-family: 'BoldPixels', sans-serif;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.import-btn:hover {
+  background: #0056b3;
+}
+
+.import-btn:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+.import-message {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+  color: #4caf50;
+  text-align: center;
+}

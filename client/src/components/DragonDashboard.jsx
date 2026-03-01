@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
 import './DragonDashboard.css';
 
 const DragonDashboard = ({ summary = {} }) => {
@@ -50,15 +51,7 @@ const DragonDashboard = ({ summary = {} }) => {
 
   return (
     <div className="dragon-vault-page">
-      {/* Navbar */}
-      <nav className="dragon-navbar">
-        <div className="nav-logo">Dragon Vault</div>
-        <div className="nav-links">
-          <Link to="/" className="nav-item active">My Dragon</Link>
-          <Link to="/calendar" className="nav-item">Calendar</Link>
-          <Link to="/settings" className="nav-item">Settings</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       {/* Main Content Area */}
       <main className="dragon-main-container">
