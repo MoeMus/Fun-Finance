@@ -52,20 +52,24 @@ def level_up_dragon(uid: str):
 
     dragon["level"] += 1
 
+    # EVOLUTION LOGIC: Every 4 levels, up to level 12
     if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
-
-        dragon["evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[0]
-        dragon["next_evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[1]
-        dragon["max_health"] = 200 + 50 / (dragon["level"] - 12)
-        dragon["current_health"] = dragon["max_health"]
-
+        current_evolution = DragonEvolutionEnum(dragon["evolution"])
+        next_evo_info = DragonEvolutionEnum.get_next_evolution(current_evolution)
+        
+        if next_evo_info:
+            dragon["evolution"] = next_evo_info[0].value
+            dragon["next_evolution"] = next_evo_info[1]
+            
+            # Physical Evolution Boost: Increase Max HP and full heal
+            dragon["max_health"] += 100
+            dragon["current_health"] = dragon["max_health"]
     else:
-
-        dragon["max_health"] += 50
-        dragon["current_health"] += 50
+        # STANDARD LEVEL UP: Only increase the numerical level.
+        # No health changes here to keep evolutions meaningful.
+        pass
 
     db.collection('dragons').document(uid).set(dragon, merge=True)
-
     return dragon
 
 

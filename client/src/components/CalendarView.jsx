@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import Navbar from './Navbar';
 import CalendarImport from './CalendarImport';
 import './CalendarView.css';
@@ -19,10 +20,25 @@ const CalendarView = () => {
   const [selectedDay, setSelectedDay] = useState(todayDate);
   const [todaySpending, setTodaySpending] = useState('0.00');
   
-  // State for events and imported sources
-  const [events, setEvents] = useState([]);
-  const [importedSources, setImportedSources] = useState([]);
+  // Use Redux to get the current token
+  const { access_token } = useSelector((state) => state.authTokenSlice);
+
+  // State for events and imported sources with LocalStorage hydration
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem('dragonvault_events');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [importedSources, setImportedSources] = useState(() => {
+    const saved = localStorage.getItem('dragonvault_sources');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(false);
+
+  // Persistence side-effect
+  useEffect(() => {
+    localStorage.setItem('dragonvault_events', JSON.stringify(events));
+    localStorage.setItem('dragonvault_sources', JSON.stringify(importedSources));
+  }, [events, importedSources]);
 
   // Calculate days in month and starting weekday padding
   const daysInMonth = new Date(year, currentMonth + 1, 0).getDate();
@@ -35,7 +51,20 @@ const CalendarView = () => {
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const handleImportSuccess = async (newEvents, sourceName) => {
-    // Add source to list if not already there
+    // Check if this source already exists and if the events are actually new
+    if (importedSources.includes(sourceName)) {
+      const currentSourceEvents = events.filter(e => e.source === sourceName);
+      
+      // DEEP COMPARISON: Compare simplified versions of events to detect real changes
+      const currentStr = JSON.stringify(currentSourceEvents.map(e => ({ t: e.title, d: e.date })));
+      const newStr = JSON.stringify(newEvents.map(e => ({ t: e.title, d: e.date })));
+      
+      if (currentStr === newStr) {
+        console.log("SMART-SYNC: No changes in this calendar. Aborting API request to save quota.");
+        return;
+      }
+    }
+
     if (!importedSources.includes(sourceName)) {
       setImportedSources(prev => [...prev, sourceName]);
     }
@@ -102,7 +131,7 @@ const CalendarView = () => {
       actual_spending: actual,
       predicted_spending: predicted,
       events_today: dayEvents,
-      current_stats: { hp: 100, level: 7, mood: 'happy' } // Mocked until Redux/Firebase is linked
+      current_stats: { hp: 100, level: 7, mood: 'happy' }
     };
 
     try {
@@ -114,7 +143,37 @@ const CalendarView = () => {
       const data = await response.json();
       
       if (data.status === 'success') {
-        alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\nDragon Insight: ${data.insight}\n\nHP Changed by: ${data.hp_delta}`);
+        // IF VICTORY: Call the Level Up endpoint!
+        if (data.battle_result === 'victory') {
+          console.log("VICTORY! Leveling up dragon...");
+          try {
+            await fetch('http://127.0.0.1:5000/dragon/levelup', {
+              method: 'POST',
+              headers: { 
+                'Authorization': `Bearer ${access_token}`
+              }
+            });
+          } catch (lvlErr) {
+            console.error("Level up failed:", lvlErr);
+          }
+        } else if (data.battle_result === 'defeat') {
+          // IF DEFEAT: Trigger sadness
+          console.log("DEFEAT! Updating mood to sad...");
+          try {
+            await fetch('http://127.0.0.1:5000/dragon/update-mood', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${access_token}`
+              },
+              body: JSON.stringify({ mood: { happy: false, sad: true, hungry: false, dirty: false, lonely: false, bored: false } })
+            });
+          } catch (moodErr) {
+            console.error("Mood update failed:", moodErr);
+          }
+        }
+
+        alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\nDragon Insight: ${data.insight}`);
       } else {
         alert("Agent failed to respond.");
       }

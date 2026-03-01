@@ -29,6 +29,7 @@ ai_cache = {}
 def analyze_calendar_events(events):
     """
     Analyzes weekly calendar events for financial impact and causal patterns.
+    Optimized for Metro Vancouver 2026 context and Finance Dragon evolution rules.
     """
     if not api_key:
         return {"events": events, "summary": {"totalPredicted": 0, "status": "under"}}
@@ -40,40 +41,62 @@ def analyze_calendar_events(events):
         return ai_cache[event_hash]
 
     prompt = f"""
-    Analyze these calendar events for the week. 
-    1. For each event, predict: predictedCost, risk (high/medium/low), and a savingTip.
-    2. Identify 'Causal Patterns'.
-    3. Based on a weekly budget of $150, determine if the user is 'over' or 'under'.
-    
-    RULES FOR THE FINANCE-DRAGON:
-    - Over budget for 1 week: Dragon becomes 'sad' or 'hungry'.
-    - Over budget for 2 weeks: Dragon 'shrinks'.
-    - Under budget for 1 week: Dragon becomes 'happy'.
-    - Under budget for 2 weeks: Dragon 'grows'.
-    - If no activity: Dragon becomes 'bored' or 'lonely'.
-    - If lots of 'dirty' risk spending: Dragon becomes 'stinky'.
+    ROLE: You are a Metro Vancouver Financial Analyst in the year 2026. 
+    CONTEXT: The user lives in the Lower Mainland.
+    - Basic Coffee/Cafe visit: $5-$12
+    - Fast Casual Meal (e.g., Chipotle, Sushi): $25-$35
+    - Sit-down Dinner: $40-$90 per person
+    - Transit/Parking: $5-$15
+    - Tipping is 15-30%.
 
-    Events:
+    TASK:
+    Analyze the provided calendar events. Identify which entries are "Spending Triggers." 
+    If an event is purely digital or at home (e.g., "Zoom Call", "Clean Room"), predictedCost is 0.
+    If an event involves leaving the house or social pressure (e.g., "Meet Mike", "Study @ Library"), 
+    predict the most likely cost in 2026 CAD including transportation and incidental snacks.
+
+    RULES FOR THE FINANCE-DRAGON EVOLUTION (Weekly Budget: $150):
+    - IF Status is 'over' budget:
+        - dragonMood: 'sad'
+        - suggestedActions: ["update_mood_sad"]
+        - Context: 1 week over = sad. 2 weeks over = stay sad.
+    - IF Status is 'under' budget:
+        - dragonMood: 'happy'
+        - suggestedActions: ["level_up_dragon", "update_mood_happy"]
+        - Context: 1 week under = happy + level up. 2 weeks under = happy + level up.
+
+    INPUT EVENTS:
     {json.dumps(events)}
 
-    Return a JSON object with:
-    - 'events': array of analyzed events with predictedCost, risk, and savingTip.
-    - 'summary': {{
-        'totalPredicted': number,
-        'status': 'over' or 'under',
-        'causalInsight': 'string explaining a habit',
-        'dragonMood': 'happy' | 'sad' | 'hungry' | 'bored' | 'lonely' | 'stinky',
-        'dragonSize': 'egg' | 'baby' | 'small' | 'medium' | 'large'
+    OUTPUT JSON STRUCTURE:
+    {{
+        "events": [
+            {{
+                "title": "string",
+                "date": "YYYY-MM-DD",
+                "predictedCost": number,
+                "risk": "high" | "medium" | "low",
+                "savingTip": "Vancouver-specific tip like 'Take the SkyTrain instead of an Evo'"
+            }}
+        ],
+        "summary": {{
+            "totalPredicted": number,
+            "status": "over" | "under",
+            "causalInsight": "string explaining the Vancouver-specific spending habit",
+            "dragonMood": "happy" | "sad" | "hungry" | "bored" | "lonely" | "stinky",
+            "dragonSize": "egg" | "baby" | "small" | "medium" | "large",
+            "suggestedActions": ["list", "of", "controller", "calls"]
+        }}
     }}
     """
 
     try:
-        # Keeping Gemini 2.5 Flash as requested
+        # Using Gemini 2.5 Flash as requested
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
-                system_instruction="You are a behavioral financial AI. You analyze calendar events to predict spending and simulate the growth/mood of a digital dragon pet.",
+                system_instruction="You are a Metro Vancouver 2026 Behavioral Financial Agent.",
                 response_mime_type="application/json",
             ),
         )
@@ -101,7 +124,7 @@ def apply_dragon_evolution(hp_delta: int, new_mood: str, insight: str) -> dict:
 
 def resolve_day_agent(actual_spending, predicted_spending, events_today, current_stats):
     """
-    The Agentic Loop: FORCES the AI to act via function calling.
+    The Agentic Loop: Evaluates User Action vs AI Prediction and FORCES the tool call.
     """
     if not api_key:
         return {"error": "API key missing"}
@@ -111,7 +134,7 @@ def resolve_day_agent(actual_spending, predicted_spending, events_today, current
         "1. Compare Actual Spending vs Predicted Spending.\n"
         "2. If Actual > Predicted: Call tool with negative hp_delta and mood 'sad'.\n"
         "3. If Actual <= Predicted: Call tool with positive hp_delta and mood 'happy'.\n"
-        "4. Your 'insight' should be a punchy message about today's spending habits."
+        "4. Your 'insight' should be a punchy message about today's spending habits in Vancouver."
     )
     
     prompt = (
@@ -122,7 +145,7 @@ def resolve_day_agent(actual_spending, predicted_spending, events_today, current
     )
     
     try:
-        # Use Gemini 2.5 Flash with FORCED tool calling 
+        # Use Gemini 2.5 Flash with FORCED tool calling
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
@@ -149,7 +172,7 @@ def resolve_day_agent(actual_spending, predicted_spending, events_today, current
                     "battle_result": "defeat" if args.get("hp_delta", 0) < 0 else "victory",
                     "hp_delta": args.get("hp_delta", 0),
                     "new_mood": args.get("new_mood", "happy"),
-                    "insight": args.get("insight", "The battle has ended.")
+                    "insight": args.get("insight", "The day has ended.")
                 }
         
         return {"error": "Agent refused to act."}
