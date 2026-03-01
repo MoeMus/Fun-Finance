@@ -16,10 +16,10 @@ export function TimeProvider({ children }) {
     const interval = setInterval(() => {
       setCurrentTime(Date.now());
 
-      // if (Math.random() < 0.1) run_random_event('hungry');
-      // if (Math.random() < 0.1) run_random_event('bored');
-      // if (Math.random() < 0.1) run_random_event('lonely');
-      // if (Math.random() < 0.1) run_random_event('dirty');
+      if (Math.random() < 0.1) run_random_event('hungry');
+      if (Math.random() < 0.1) run_random_event('bored');
+      if (Math.random() < 0.1) run_random_event('lonely');
+      if (Math.random() < 0.1) run_random_event('dirty');
     }, 35000);
 
     return () => clearInterval(interval);
