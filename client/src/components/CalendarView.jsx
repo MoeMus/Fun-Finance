@@ -282,7 +282,6 @@ const CalendarView = () => {
               .reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0)
               .toFixed(2)
             }</p>
-            <p>weekly budget left: $4</p>
           </div>
 
           <div className="end-day-section">
