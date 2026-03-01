@@ -9,6 +9,7 @@ import {feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_
 
 function DragonDashboard() {
 
+  const [deadDragons, setDeadDragons] = useState([]);
   const { dragon, is_dragon_loaded } = useSelector((state) => state.dragonSlice);
   const { access_token } = useSelector((state) => state.authTokenSlice);
   const dispatch = useDispatch();
@@ -20,7 +21,7 @@ function DragonDashboard() {
     if (!is_dragon_loaded) {
       getDragonData();
     }
-
+    get_dead_dragons();
   }, []);
 
   useEffect(()=>{
@@ -105,6 +106,24 @@ function DragonDashboard() {
 
   }
 
+  const get_dead_dragons = async () => {
+    const response = await fetch('http://127.0.0.1:5000/dragon/dead', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${access_token}`
+      }
+    });
+
+    if (!response.ok) {
+      const error_msg = await response.json();
+      setError(error_msg.error);
+    } else {
+      const dead_dragons = await response.json();
+      setDeadDragons(prevState => [ ...dead_dragons])
+    }
+
+  }
+
   if (!dragon) {
     return (
       <div className="dragon-vault-page">
@@ -127,7 +146,7 @@ function DragonDashboard() {
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
                 <img src="../../public/Sunset.png" alt={"sunset"} className="overlay-image"/>
-
+                {deadDragons.length > 0 ? <img className={"grave-stone"} src={'../../public/Gravestone.png'} alt={"gravestone"} /> : null }
                 {dragon.current_health > 0 ?
 
                   <>
