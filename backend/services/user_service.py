@@ -1,5 +1,6 @@
 from flask import jsonify
 from backend.services.firebase_service import db
+from datetime import datetime, timezone
 
 
 def get_user_data(user_id: str):
@@ -13,7 +14,8 @@ def add_user(uid: str, user: dict):
     user_data = {
         "username": user["username"],
         "user_id": uid,
-        "email": user["email"]
+        "email": user["email"],
+        "last_login_date": datetime.now(timezone.utc)
     }
 
     user_ref = db.collection("users").document(uid)

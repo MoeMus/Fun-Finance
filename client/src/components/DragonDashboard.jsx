@@ -109,9 +109,43 @@ function DragonDashboard() {
           <div className="stage-split">
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
-                <span className="mood-emoji">
-                </span>
-                {/*<p className="mood-display-text">{currentMood.toUpperCase()}</p>*/}
+                <img src="../../public/Sunset.png" alt={"sunset"} className="overlay-image"/>
+
+                {dragon.current_health > 0 ?
+
+                  <>
+                    {dragon.evolution === 'egg' ?
+                      <img src="../../public/Egg.png" alt={"egg"} className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'baby' ?
+                      <img src="../../public/dragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'teen' ?
+                      <img src="../../public/Medium%20Dragon%20FINAL.png" alt={"egg"}
+                           className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'adult' ?
+                      <img src="../../public/Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
+                    }
+                  </>
+                  :
+                  <>
+                    {dragon.evolution === 'egg' ?
+                      <img src="../../public/DEADEgg.png" alt={"dead egg"} className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'baby' ?
+                      <img src="../../public/DEADdragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'teen' ?
+                      <img src="../../public/DEAD%20Medium%20Dragon%20FINAL.png" alt={"egg"}
+                           className="foreground-image"/> : null
+                    }
+                    {dragon.evolution === 'adult' ?
+                      <img src="../../public/DEAD%20Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
+                    }
+                  </>
+                }
+
               </div>
             </div>
 
@@ -144,10 +178,6 @@ function DragonDashboard() {
                     <span className="stat-label">next evolution:</span>
                     <span className="stat-value">level {dragon.next_evolution}</span>
                   </div>
-                </div>
-
-                <div className="level-up-countdown">
-                  <p>5 days to next level up opportunity</p>
                 </div>
                 </>
                 :
