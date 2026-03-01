@@ -53,26 +53,29 @@ function LoginPage() {
 
     return (
 
-        <div className="login-container">
-          <header className="login-header">
-            <div className="header-text">
-              <h1>Welcome Back</h1>
-              <p className="subtitle">Sign in to view your financial outlook</p>
-            </div>
-          </header>
+      <div className="dv-page dragon-vault-signup-page">
 
-          <section className="login-card">
-            <form className="login-form" onSubmit={submitCredentials}>
+        <header className="dv-header">
+          <h1 className="dv-title">Dragon vault</h1>
+        </header>
+
+        <main className="dv-hero dragon-main-container-with-scales">
+          <div className="dv-card">
+            <form className="dv-form" onSubmit={submitCredentials}>
+              <div className="header-text">
+                <h1>Welcome Back</h1>
+                <p>Sign in to view your financial outlook</p>
+              </div>
               <div className="form-row">
                 <label className="form-label" htmlFor="email">Email</label>
                 <input
-                  className="form-input"
+                  className="dv-input"
                   id="email"
                   type="email"
                   value={email}
                   placeholder="you@example.com"
                   autoComplete="email"
-                  onChange={(e)=>setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                 />
               </div>
@@ -80,14 +83,14 @@ function LoginPage() {
               <div className="form-row">
                 <label className="form-label" htmlFor="password">Password</label>
                 <input
-                  className="form-input"
+                  className="dv-input"
                   id="password"
                   type="password"
                   value={password}
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
-                  onChange={(e)=>setPassword(e.target.value)}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
@@ -98,16 +101,18 @@ function LoginPage() {
               </div>
 
               <div className="login-links">
-                <button className="link-button" type="button" onClick={()=>navigate('/signup')}>Create an account</button>
+                <button className="link-button" type="button" onClick={() => navigate('/signup')}>Create an account
+                </button>
               </div>
             </form>
-          </section>
-
-          <div className="tamagotchi-teaser">
-            <p>🐾 Your Finance-agotchi will feel <strong>calmer</strong> once you sign in.</p>
           </div>
+        </main>
+
+        <div className="tamagotchi-teaser">
+          <p>🐾 Your Finance-agotchi will feel <strong>calmer</strong> once you sign in.</p>
         </div>
-  )
+      </div>
+    )
 
 }
 
