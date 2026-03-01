@@ -1,30 +1,52 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice } from "@reduxjs/toolkit";
 
-const storedDragon = sessionStorage.getItem('dragon');
+function loadDragonFromSession() {
+  const raw = sessionStorage.getItem("dragon");
+
+  // nothing stored
+  if (!raw) return null;
+
+  // common bad values
+  if (raw === "undefined" || raw === "null") return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    // corrupted / invalid JSON, wipe it
+    sessionStorage.removeItem("dragon");
+    return null;
+  }
+}
+
+const storedDragonObj = loadDragonFromSession();
 
 const dragonSlice = createSlice({
-  name: 'DragonSlice',
+  name: "DragonSlice",
   initialState: {
-    dragon: storedDragon ? JSON.parse(storedDragon) : null,
-    is_dragon_loaded: !!storedDragon
+    dragon: storedDragonObj,
+    is_dragon_loaded: !!storedDragonObj,
   },
   reducers: {
     setDragon: (state, action) => {
-      sessionStorage.setItem(
-        'dragon',
-        JSON.stringify(action.payload.dragon)
-      );
+      const dragon = action.payload?.dragon ?? null;
 
-      state.dragon = action.payload.dragon;
-      state.is_dragon_loaded = true;
+      if (dragon) {
+        sessionStorage.setItem("dragon", JSON.stringify(dragon));
+        state.dragon = dragon;
+        state.is_dragon_loaded = true;
+      } else {
+        sessionStorage.removeItem("dragon");
+        state.dragon = null;
+        state.is_dragon_loaded = false;
+      }
     },
 
     removeDragon: (state) => {
-      sessionStorage.removeItem('dragon');
+      sessionStorage.removeItem("dragon");
       state.dragon = null;
       state.is_dragon_loaded = false;
-    }
-  }
+    },
+  },
 });
 
 export const { setDragon, removeDragon } = dragonSlice.actions;

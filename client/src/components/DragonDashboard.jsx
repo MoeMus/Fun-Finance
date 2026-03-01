@@ -38,7 +38,7 @@ function DragonDashboard() {
             newMap.set(key, true);
           }
         });
-
+        console.log(newMap)
         return newMap;
       });
     }
@@ -97,57 +97,70 @@ function DragonDashboard() {
 
             <div className="dragon-stats-panel">
               <h2 className="dragon-type-title">{dragon.evolution}</h2>
-              <div className="stats-list">
-                <div className="stat-line">
-                  <span className="stat-label">name:</span>
-                  <span className="stat-value">{dragon.name}</span>
-                </div>
-                <div className="stat-line">
-                  <span className="stat-label">lvl:</span>
-                  <span className="stat-value">{dragon.level}</span>
-                </div>
-                <div className="stat-line">
-                  <span className="stat-label">hp:</span>
-                  <span className="stat-value">100/100</span>
-                </div>
-                <div className="stat-line">
-                  <span className="stat-label">mood:</span>
-                  {[...activeMaintenanceMoods.keys()].map((key) => (
-                    <span key={key}>{key}</span>
-                  ))}
-                </div>
-                <div className="stat-line">
-                  <span className="stat-label">next evolution:</span>
-                  <span className="stat-value">level {dragon.next_evolution}</span>
-                </div>
-              </div>
 
-              <div className="level-up-countdown">
-                <p>5 days to next level up opportunity</p>
-              </div>
+              {dragon.current_health > 0 ?
+
+                <>
+                <div className="stats-list">
+                  <div className="stat-line">
+                    <span className="stat-label">name:</span>
+                    <span className="stat-value">{dragon.name}</span>
+                  </div>
+                  <div className="stat-line">
+                    <span className="stat-label">lvl:</span>
+                    <span className="stat-value">{dragon.level}</span>
+                  </div>
+                  <div className="stat-line">
+                    <span className="stat-label">hp:</span>
+                    <span className="stat-value">{dragon.current_health} / {dragon.max_health}</span>
+                  </div>
+                  <div className="stat-line">
+                    <span className="stat-label">mood:</span>
+                    {[...activeMaintenanceMoods.keys()].map((key) => (
+                      <span key={key}>{key}</span>
+                    ))}
+                  </div>
+                  <div className="stat-line">
+                    <span className="stat-label">next evolution:</span>
+                    <span className="stat-value">level {dragon.next_evolution}</span>
+                  </div>
+                </div>
+
+                <div className="level-up-countdown">
+                  <p>5 days to next level up opportunity</p>
+                </div>
+                </>
+                :
+
+                <div className="stat-line">
+                  <span className="stat-label"> Your Dragon has Died </span>
+                </div>
+
+              }
+
             </div>
           </div>
 
           <footer className="dragon-action-bar">
-            <button 
+            <button
               className={`action-btn ${activeMaintenanceMoods.has('hungry') ? 'alert' : ''}`}
               onClick={() => updateDragon(feed_dragon)}
             >
               FEED
             </button>
-            <button 
+            <button
               className={`action-btn ${activeMaintenanceMoods.has('bored') ? 'alert' : ''}`}
               onClick={() => updateDragon(play_with_dragon)}
             >
               PLAY
             </button>
-            <button 
+            <button
               className={`action-btn ${activeMaintenanceMoods.has('lonely') ? 'alert' : ''}`}
               onClick={() => updateDragon(pet_dragon)}
             >
               PET
             </button>
-            <button 
+            <button
               className={`action-btn ${activeMaintenanceMoods.has('dirty') ? 'alert' : ''}`}
               onClick={() => updateDragon(wash_dragon)}
             >

@@ -290,7 +290,6 @@ def make_dragon(uid: str, action: str):
     def _run(transaction: firestore.Transaction) -> Dict[str, Any]:
         snap = ref.get(transaction=transaction)
         dragon = _require_dragon(snap)
-
         if action == "hungry":
             dragon["mood"]["hungry"] = True
 
