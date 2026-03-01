@@ -2,18 +2,28 @@ import os
 import json
 from google import genai
 from google.genai import types
-from dotenv import load_dotenv
+import dotenv
 
-load_dotenv()
+# Define the path to the secrets folder
+current_dir = os.path.dirname(os.path.abspath(__file__))
+secrets_env_path = os.path.join(os.path.dirname(current_dir), 'secrets', '.env')
+
+# Load the .env from the secrets folder
+if os.path.exists(secrets_env_path):
+    dotenv.load_dotenv(secrets_env_path)
+else:
+    dotenv.load_dotenv()
 
 # Initialize Gemini Client
 api_key = os.getenv("GEMINI_API_KEY")
-client = genai.Client(api_key=api_key)
+client = None
+
+if api_key:
+    client = genai.Client(api_key=api_key)
 
 def analyze_calendar_events(events):
     """
     Sends calendar events to Gemini to predict costs and risks.
-    Uses the latest google-genai SDK and Gemini 2.0 Flash.
     """
     if not api_key:
         print("Error: GEMINI_API_KEY not found in environment.")
@@ -34,7 +44,7 @@ def analyze_calendar_events(events):
     """
 
     try:
-        # Using Gemini 3 Flash Preview as per latest docs
+        # Using Gemini 3 Flash Preview
         response = client.models.generate_content(
             model="gemini-3-flash-preview",
             contents=prompt,
