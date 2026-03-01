@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth } from "../firebase.js";
 import "./LoginStyles.css"
 import { useSelector, useDispatch } from 'react-redux'
@@ -15,7 +16,7 @@ function LoginPage() {
     const { is_logged_in } = useSelector((state) => state.authTokenSlice);
     const navigate = useNavigate();
     const location = useLocation();
-
+    const db = getFirestore();
     useEffect(() => {
         if (is_logged_in) {
 
@@ -28,28 +29,32 @@ function LoginPage() {
     }, [is_logged_in, navigate, location]);
 
     const submitCredentials = async (e) => {
-        e.preventDefault();
+      e.preventDefault();
 
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-
-            const user = auth.currentUser;
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
             if (user) {
+                // ✅ Update last_login_date in Firestore
+                const userRef = doc(db, "users", user.uid);
+
+                await updateDoc(userRef, {
+                    last_login_date: serverTimestamp()
+                });
+
+                // ✅ Get Firebase ID token
                 const token = await user.getIdToken();
 
-                const state_change = {
+                dispatch(setAuthToken({
                     access_token: token
-                };
-
-                dispatch(setAuthToken(state_change));
-
+                }));
             }
 
         } catch (err) {
-            setLoginError(e);
+            setLoginError(err.message);
         }
-    }
+    };
 
     return (
 
@@ -107,10 +112,6 @@ function LoginPage() {
             </form>
           </div>
         </main>
-
-        <div className="tamagotchi-teaser">
-          <p>🐾 Your Finance-agotchi will feel <strong>calmer</strong> once you sign in.</p>
-        </div>
       </div>
     )
 

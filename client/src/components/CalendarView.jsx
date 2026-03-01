@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './Navbar';
 import CalendarImport from './CalendarImport';
 import './CalendarView.css';
+import { setDragon } from "../auth_token_store/dragon_slice.js";
 
 const CalendarView = () => {
   // Use PST Timezone to ensure consistency
@@ -16,13 +18,30 @@ const CalendarView = () => {
   const currentMonth = now.getMonth();
   const todayDate = now.getDate();
 
+  const dispatch = useDispatch();
   const [selectedDay, setSelectedDay] = useState(todayDate);
   const [todaySpending, setTodaySpending] = useState('0.00');
   
-  // State for events and imported sources
-  const [events, setEvents] = useState([]);
-  const [importedSources, setImportedSources] = useState([]);
+  // Use Redux to get the current token
+  const { access_token } = useSelector((state) => state.authTokenSlice);
+
+  // State for events and imported sources with LocalStorage hydration
+  const [events, setEvents] = useState(() => {
+    const saved = localStorage.getItem('dragonvault_events');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [importedSources, setImportedSources] = useState(() => {
+    const saved = localStorage.getItem('dragonvault_sources');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [loading, setLoading] = useState(false);
+  const [isSlashing, setIsSlashing] = useState(false); // For combat animation
+
+  // Persistence side-effect
+  useEffect(() => {
+    localStorage.setItem('dragonvault_events', JSON.stringify(events));
+    localStorage.setItem('dragonvault_sources', JSON.stringify(importedSources));
+  }, [events, importedSources]);
 
   // Calculate days in month and starting weekday padding
   const daysInMonth = new Date(year, currentMonth + 1, 0).getDate();
@@ -35,7 +54,20 @@ const CalendarView = () => {
   const weekDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
   const handleImportSuccess = async (newEvents, sourceName) => {
-    // Add source to list if not already there
+    // Check if this source already exists and if the events are actually new
+    if (importedSources.includes(sourceName)) {
+      const currentSourceEvents = events.filter(e => e.source === sourceName);
+      
+      // DEEP COMPARISON: Compare simplified versions of events to detect real changes
+      const currentStr = JSON.stringify(currentSourceEvents.map(e => ({ t: e.title, d: e.date })));
+      const newStr = JSON.stringify(newEvents.map(e => ({ t: e.title, d: e.date })));
+      
+      if (currentStr === newStr) {
+        console.log("SMART-SYNC: No changes in this calendar. Aborting API request to save quota.");
+        return;
+      }
+    }
+
     if (!importedSources.includes(sourceName)) {
       setImportedSources(prev => [...prev, sourceName]);
     }
@@ -92,17 +124,20 @@ const CalendarView = () => {
     return 'Small';
   };
 
-  // Agentic "End Day" Hook
+  // Agentic "End Day" Hook - CONSOLIDATED & PROPER
   const handleEndDay = async () => {
-    const dayEvents = getEventsForDay(selectedDay);
+    const dayEvents = getEventsForDay(todayDate); // Only resolve today
     const predicted = dayEvents.reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0);
     const actual = Number(todaySpending) || 0;
+
+    // 1. START ANIMATION
+    setIsSlashing(true);
 
     const payload = {
       actual_spending: actual,
       predicted_spending: predicted,
       events_today: dayEvents,
-      current_stats: { hp: 100, level: 7, mood: 'happy' } // Mocked until Redux/Firebase is linked
+      current_stats: { hp: 100, level: 7, mood: 'happy' }
     };
 
     try {
@@ -114,12 +149,43 @@ const CalendarView = () => {
       const data = await response.json();
       
       if (data.status === 'success') {
-        alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\nDragon Insight: ${data.insight}\n\nHP Changed by: ${data.hp_delta}`);
-      } else {
-        alert("Agent failed to respond.");
+        // Map Agent result to Backend Mood Flags
+        const isVictory = data.battle_result === 'victory';
+        const moodUpdate = {
+          mood: {
+            happy: isVictory,
+            sad: !isVictory,
+            hungry: false,
+            dirty: false,
+            lonely: false,
+            bored: false
+          }
+        };
+
+        // 2. PROPER BACKEND UPDATE: Hit one endpoint, let it handle side effects (like level up)
+        const updateResponse = await fetch('http://127.0.0.1:5000/dragon/update-mood', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+          },
+          body: JSON.stringify(moodUpdate)
+        });
+
+        const updatedDragonData = await updateResponse.json();
+        
+        // 3. UPDATE REDUX: This ensures the Dashboard gets the new stats!
+        dispatch(setDragon({ dragon: updatedDragonData }));
+
+        // 4. SHOW RESULT
+        setTimeout(() => {
+          setIsSlashing(false);
+          alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\n${data.insight}`);
+        }, 1000); // Let animation play for 1s
       }
     } catch (error) {
-      console.error("End Day failed:", error);
+      console.error("Battle failed:", error);
+      setIsSlashing(false);
     }
   };
 
@@ -204,18 +270,20 @@ const CalendarView = () => {
           
           <div className="day-tasks">
             <p className="sidebar-label">Scheduled Events:</p>
-            <ul className="task-list">
-              {getEventsForDay(selectedDay).map((e, idx) => (
-                <li key={idx}>
-                  <span className="task-bullet">•</span> 
-                  <span className="task-title">{e.title}</span>
-                  {e.predictedCost !== undefined && <span className="task-cost"> - ${Number(e.predictedCost).toFixed(2)}</span>}
-                </li>
-              ))}
-              {getEventsForDay(selectedDay).length === 0 && 
-                <li className="no-tasks">No events planned</li>
-              }
-            </ul>
+            <div className="task-list-wrapper">
+              <ul className="task-list">
+                {getEventsForDay(selectedDay).map((e, idx) => (
+                  <li key={idx}>
+                    <span className="task-bullet">•</span> 
+                    <span className="task-title">{e.title}</span>
+                    {e.predictedCost !== undefined && <span className="task-cost"> - ${Number(e.predictedCost).toFixed(2)}</span>}
+                  </li>
+                ))}
+                {getEventsForDay(selectedDay).length === 0 && 
+                  <li className="no-tasks">No events planned</li>
+                }
+              </ul>
+            </div>
           </div>
 
           <div className="financial-stats">
@@ -223,7 +291,6 @@ const CalendarView = () => {
               .reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0)
               .toFixed(2)
             }</p>
-            <p>weekly budget left: $4</p>
           </div>
 
           <div className="end-day-section">
