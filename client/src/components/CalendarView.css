@@ -96,6 +96,12 @@
   border-right: 4px solid #000;
 }
 
+.weekday-label:nth-child(2),
+.weekday-label:nth-child(4),
+.weekday-label:nth-child(6) {
+  background-color: #c62828;
+}
+
 .weekday-label:last-child {
   border-right: none;
 }
