@@ -153,10 +153,9 @@ function DragonDashboard() {
             </div>
 
             <div className="dragon-stats-panel">
-              <h2 className="dragon-type-title">{dragon.evolution}</h2>
+              <h2 className="dragon-type-title">{dragon.evolution.toUpperCase()} DRAGON</h2>
 
               {dragon.current_health > 0 ?
-
                 <>
                 <div className="stats-list">
                   <div className="stat-line">
@@ -173,23 +172,25 @@ function DragonDashboard() {
                   </div>
                   <div className="stat-line">
                     <span className="stat-label">mood:</span>
-                    {[...activeMaintenanceMoods.keys()].map((key) => (
-                      <span key={key}>{key}</span>
-                    ))}
+                    <span className="stat-value">
+                      {activeMaintenanceMoods.size > 0 
+                        ? [...activeMaintenanceMoods.keys()].join(', ') 
+                        : (dragon.mood?.happy ? 'happy' : 'neutral')}
+                    </span>
                   </div>
                   <div className="stat-line">
                     <span className="stat-label">next evolution:</span>
-                    <span className="stat-value">level {dragon.next_evolution}</span>
+                    <span className="stat-value">
+                      {dragon.next_evolution ? `level ${dragon.next_evolution}` : 'MAX'}
+                    </span>
                   </div>
                 </div>
                 </>
                 :
-
                 <div className="stat-line">
                   { dragon.evolution === 'egg' ?  <span className="stat-label"> {dragon.name} has Cracked </span> :
                     <span className="stat-label"> {dragon.name} has Died </span>}
                 </div>
-
               }
             </div>
           </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Navbar from './Navbar';
 import CalendarImport from './CalendarImport';
 import './CalendarView.css';
+import { setDragon } from "../auth_token_store/dragon_slice.js";
 
 const CalendarView = () => {
   // Use PST Timezone to ensure consistency
@@ -17,6 +18,7 @@ const CalendarView = () => {
   const currentMonth = now.getMonth();
   const todayDate = now.getDate();
 
+  const dispatch = useDispatch();
   const [selectedDay, setSelectedDay] = useState(todayDate);
   const [todaySpending, setTodaySpending] = useState('0.00');
   
@@ -33,6 +35,7 @@ const CalendarView = () => {
     return saved ? JSON.parse(saved) : [];
   });
   const [loading, setLoading] = useState(false);
+  const [isSlashing, setIsSlashing] = useState(false); // For combat animation
 
   // Persistence side-effect
   useEffect(() => {
@@ -121,11 +124,14 @@ const CalendarView = () => {
     return 'Small';
   };
 
-  // Agentic "End Day" Hook
+  // Agentic "End Day" Hook - CONSOLIDATED & PROPER
   const handleEndDay = async () => {
-    const dayEvents = getEventsForDay(selectedDay);
+    const dayEvents = getEventsForDay(todayDate); // Only resolve today
     const predicted = dayEvents.reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0);
     const actual = Number(todaySpending) || 0;
+
+    // 1. START ANIMATION
+    setIsSlashing(true);
 
     const payload = {
       actual_spending: actual,
@@ -143,42 +149,43 @@ const CalendarView = () => {
       const data = await response.json();
       
       if (data.status === 'success') {
-        // IF VICTORY: Call the Level Up endpoint!
-        if (data.battle_result === 'victory') {
-          console.log("VICTORY! Leveling up dragon...");
-          try {
-            await fetch('http://127.0.0.1:5000/dragon/levelup', {
-              method: 'POST',
-              headers: { 
-                'Authorization': `Bearer ${access_token}`
-              }
-            });
-          } catch (lvlErr) {
-            console.error("Level up failed:", lvlErr);
+        // Map Agent result to Backend Mood Flags
+        const isVictory = data.battle_result === 'victory';
+        const moodUpdate = {
+          mood: {
+            happy: isVictory,
+            sad: !isVictory,
+            hungry: false,
+            dirty: false,
+            lonely: false,
+            bored: false
           }
-        } else if (data.battle_result === 'defeat') {
-          // IF DEFEAT: Trigger sadness
-          console.log("DEFEAT! Updating mood to sad...");
-          try {
-            await fetch('http://127.0.0.1:5000/dragon/update-mood', {
-              method: 'POST',
-              headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${access_token}`
-              },
-              body: JSON.stringify({ mood: { happy: false, sad: true, hungry: false, dirty: false, lonely: false, bored: false } })
-            });
-          } catch (moodErr) {
-            console.error("Mood update failed:", moodErr);
-          }
-        }
+        };
 
-        alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\nDragon Insight: ${data.insight}`);
-      } else {
-        alert("Agent failed to respond.");
+        // 2. PROPER BACKEND UPDATE: Hit one endpoint, let it handle side effects (like level up)
+        const updateResponse = await fetch('http://127.0.0.1:5000/dragon/update-mood', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`
+          },
+          body: JSON.stringify(moodUpdate)
+        });
+
+        const updatedDragonData = await updateResponse.json();
+        
+        // 3. UPDATE REDUX: This ensures the Dashboard gets the new stats!
+        dispatch(setDragon({ dragon: updatedDragonData }));
+
+        // 4. SHOW RESULT
+        setTimeout(() => {
+          setIsSlashing(false);
+          alert(`BATTLE RESULT: ${data.battle_result.toUpperCase()}!\n\n${data.insight}`);
+        }, 1000); // Let animation play for 1s
       }
     } catch (error) {
-      console.error("End Day failed:", error);
+      console.error("Battle failed:", error);
+      setIsSlashing(false);
     }
   };
 
@@ -263,18 +270,20 @@ const CalendarView = () => {
           
           <div className="day-tasks">
             <p className="sidebar-label">Scheduled Events:</p>
-            <ul className="task-list">
-              {getEventsForDay(selectedDay).map((e, idx) => (
-                <li key={idx}>
-                  <span className="task-bullet">•</span> 
-                  <span className="task-title">{e.title}</span>
-                  {e.predictedCost !== undefined && <span className="task-cost"> - ${Number(e.predictedCost).toFixed(2)}</span>}
-                </li>
-              ))}
-              {getEventsForDay(selectedDay).length === 0 && 
-                <li className="no-tasks">No events planned</li>
-              }
-            </ul>
+            <div className="task-list-wrapper">
+              <ul className="task-list">
+                {getEventsForDay(selectedDay).map((e, idx) => (
+                  <li key={idx}>
+                    <span className="task-bullet">•</span> 
+                    <span className="task-title">{e.title}</span>
+                    {e.predictedCost !== undefined && <span className="task-cost"> - ${Number(e.predictedCost).toFixed(2)}</span>}
+                  </li>
+                ))}
+                {getEventsForDay(selectedDay).length === 0 && 
+                  <li className="no-tasks">No events planned</li>
+                }
+              </ul>
+            </div>
           </div>
 
           <div className="financial-stats">
@@ -282,7 +291,6 @@ const CalendarView = () => {
               .reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0)
               .toFixed(2)
             }</p>
-            <p>weekly budget left: $4</p>
           </div>
 
           <div className="end-day-section">
