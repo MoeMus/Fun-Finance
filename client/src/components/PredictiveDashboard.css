@@ -13,49 +13,53 @@
   border-bottom: 1px solid #333;
 }
 
-.header-text h1 {
-  margin: 0;
-  font-size: 2rem;
-  color: #fff;
-}
-
-.subtitle {
-  margin: 0.5rem 0 0;
-  color: #888;
-}
-
-.burn-indicator {
-  text-align: right;
-  background: #1a1a1a;
-  padding: 1rem 1.5rem;
-  border-radius: 12px;
-  border: 1px solid #333;
-}
-
-.burn-label {
-  display: block;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  color: #888;
-  letter-spacing: 1px;
-}
-
-.burn-amount {
-  font-size: 1.5rem;
-  font-weight: bold;
+.burn-indicator.over .burn-amount {
   color: #ff4d4d;
 }
 
-.tamagotchi-teaser {
-  margin-top: 3rem;
-  padding: 1.5rem;
-  background: rgba(76, 175, 80, 0.1);
-  border: 1px dashed #4caf50;
-  border-radius: 12px;
-  text-align: center;
-  color: #fff;
+.burn-indicator.under .burn-amount {
+  color: #4caf50;
 }
 
-.text-right {
-  text-align: right;
+.dragon-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+
+.insight-bubble {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid #444;
+  padding: 1rem 1.5rem;
+  border-radius: 16px;
+  max-width: 80%;
+  margin-top: -1rem;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.insight-bubble p {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #ddd;
+  line-height: 1.5;
+}
+
+.loading-state {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  color: #888;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.events-list h3 {
+  margin-bottom: 1.5rem;
+  font-size: 1.2rem;
+  color: #888;
 }
