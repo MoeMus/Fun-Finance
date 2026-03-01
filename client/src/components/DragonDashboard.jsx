@@ -5,12 +5,12 @@ import { removeAuthToken } from '../auth_token_store/auth_token_slice';
 import Navbar from './Navbar';
 import './DragonDashboard.css';
 import {setDragon, removeDragon} from "../auth_token_store/dragon_slice.js";
-import {feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_events.jsx";
+import {apply_prev_days_effects, feed_dragon, pet_dragon, play_with_dragon, wash_dragon} from "../dragon_events.jsx";
 
 function DragonDashboard() {
 
   const { dragon, is_dragon_loaded } = useSelector((state) => state.dragonSlice);
-  const { access_token } = useSelector((state) => state.authTokenSlice);
+  const { access_token, last_login_date } = useSelector((state) => state.authTokenSlice);
   const dispatch = useDispatch();
   const [activeMaintenanceMoods, setActiveMaintenanceMoods] = useState(new Map([]))
   const [error, setError] = useState('');
@@ -18,7 +18,15 @@ function DragonDashboard() {
 
   useEffect(()=>{
     if (!is_dragon_loaded) {
-      getDragonData();
+      if (last_login_date) {
+        (async function (){
+          await apply_prev_days_effects(access_token, last_login_date);
+        })()
+      }
+      (async function (){
+        await getDragonData();
+      })()
+
     }
 
   }, []);
@@ -48,7 +56,7 @@ function DragonDashboard() {
   }
 
   const getDragonData = async () => {
-
+    console.log('getDragonData')
     const response = await fetch('http://127.0.0.1:5000/dragon/get', {
       method: "GET",
       headers: {

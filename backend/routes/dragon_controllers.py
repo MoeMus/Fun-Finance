@@ -71,7 +71,7 @@ def update_dragon_mood_controller():
 
 @dragon_api_route.route('/update-mood/stack', methods=['POST'])
 @authenticate_token
-def update_dragon_mood_controller():
+def update_dragon_mood_controller_stack():
 
     uid = auth_service.get_uid_from_token()
 

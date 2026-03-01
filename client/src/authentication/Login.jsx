@@ -44,6 +44,8 @@ function LoginPage() {
 
                 if (userSnap.exists()) {
                   last_login = userSnap.data().last_login_date;
+                  last_login = last_login ? last_login.toMillis() : null;
+
                 }
 
                 await updateDoc(userRef, {

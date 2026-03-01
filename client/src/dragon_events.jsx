@@ -91,16 +91,18 @@ async function random_event(access_token, action) {
 
 }
 
-async function apply_prev_days_effects (access_token, last_login_date, mood){
-  const lastLoginDate = last_login_date.toDate();
-  const now = new Date();
+async function apply_prev_days_effects (access_token, last_login_date){
+  const daysSince = last_login_date === null ? 0 : Math.floor((Date.now() - last_login_date) / 86400000);
 
-  const diffMs = now - lastLoginDate; // difference in milliseconds
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (daysSince <= 5) return;
 
-  if (diffDays <= 1) return;
-
-  let dragon_data;
+   const dragon_response = await fetch('https://127.0.0.1:5000/dragon/get', {
+    method: 'GET',
+    headers: {
+      "Authorization": `Bearer ${access_token}`
+    },
+  });
+  let dragon_data = await dragon_response.json();
 
   const response = await fetch('https://127.0.0.1:5000/dragon/update-mood/stack', {
     method: 'POST',
@@ -108,7 +110,7 @@ async function apply_prev_days_effects (access_token, last_login_date, mood){
       "Content-Type": "application/json",
       "Authorization": `Bearer ${access_token}`
     },
-    body: JSON.stringify({ ...mood, times: diffDays })
+    body: JSON.stringify({ ...dragon_data.mood, times: daysSince })
   });
 
   if (!response.ok) {
