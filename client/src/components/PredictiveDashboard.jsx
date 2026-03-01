@@ -1,16 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import EventImpactCard from './EventImpactCard';
+import FinanceDragon from './FinanceDragon';
+import BurnRateChart from './BurnRateChart';
 import './PredictiveDashboard.css';
 
 const PredictiveDashboard = () => {
   const [events, setEvents] = useState([]);
+  const [summary, setSummary] = useState({
+    totalPredicted: 0,
+    status: 'under',
+    causalInsight: 'Analyzing your habits...',
+    dragonMood: 'happy',
+    dragonSize: 'baby'
+  });
   const [loading, setLoading] = useState(true);
 
   const initialCalendarData = [
     { id: 1, title: "Study Group @ Starbucks", type: "social", date: "2026-03-01" },
     { id: 2, title: "Gym Session", type: "health", date: "2026-03-02" },
     { id: 3, title: "Team Lunch - Sushi", type: "work", date: "2026-03-03" },
-    { id: 4, title: "Grocery Run", type: "errands", date: "2026-03-04" }
+    { id: 4, title: "Grocery Run", type: "errands", date: "2026-03-04" },
+    { id: 5, title: "Night Out with Friends", type: "social", date: "2026-03-06" }
   ];
 
   useEffect(() => {
@@ -23,17 +33,11 @@ const PredictiveDashboard = () => {
         });
         const data = await response.json();
         
-        // Ensure data is an array
-        const eventsArray = Array.isArray(data) ? data : (data.events || []);
-        setEvents(eventsArray);
+        if (data.events) setEvents(data.events);
+        if (data.summary) setSummary(data.summary);
       } catch (error) {
         console.error("Failed to fetch Gemini analysis:", error);
-        setEvents(initialCalendarData.map(e => ({ 
-          ...e, 
-          predictedCost: 0, 
-          risk: 'low', 
-          savingTip: "Check your backend connection!" 
-        })));
+        setEvents(initialCalendarData.map(e => ({ ...e, predictedCost: 0, risk: 'low' })));
       } finally {
         setLoading(false);
       }
@@ -42,36 +46,36 @@ const PredictiveDashboard = () => {
     fetchAIAnalysis();
   }, []);
 
-  const totalPredictedBurn = events.reduce((sum, e) => sum + (Number(e.predictedCost) || 0), 0);
-
-  if (loading) return <div className="loading-state">Consulting the Finance-agotchi...</div>;
+  if (loading) return <div className="loading-state">Consulting the Finance Dragon...</div>;
 
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
         <div className="header-text">
-          <h1>Financial Outlook</h1>
-          <p className="subtitle">Gemini AI Analysis of your next 7 days</p>
+          <h1>DragonVault</h1>
+          <p className="subtitle">Gemini 3 Behavioral Analysis</p>
         </div>
-        <div className="burn-indicator">
-          <span className="burn-label">Total Burn</span>
-          <span className="burn-amount">${totalPredictedBurn.toFixed(2)}</span>
+        <div className={`burn-indicator ${summary.status}`}>
+          <span className="burn-label">Weekly Predicted</span>
+          <span className="burn-amount">${(summary.totalPredicted || 0).toFixed(2)}</span>
         </div>
       </header>
 
-      <section className="events-list">
-        {events.length > 0 ? (
-          events.map(event => (
-            <EventImpactCard key={event.id || Math.random()} event={event} />
-          ))
-        ) : (
-          <p className="no-events">No events to analyze. Add some to your calendar!</p>
-        )}
-      </section>
-
-      <div className="tamagotchi-teaser">
-        <p>🐾 Your Finance-agotchi is <strong>{totalPredictedBurn > 50 ? 'sweating' : 'chilling'}</strong> based on your schedule.</p>
+      <div className="dragon-section">
+        <FinanceDragon mood={summary.dragonMood} size={summary.dragonSize} />
+        <div className="insight-bubble">
+          <p>✨ <strong>Dragon Insight:</strong> {summary.causalInsight}</p>
+        </div>
       </div>
+
+      <BurnRateChart events={events} budget={150} />
+
+      <section className="events-list">
+        <h3>Upcoming Spending Triggers</h3>
+        {events.map(event => (
+          <EventImpactCard key={event.id || Math.random()} event={event} />
+        ))}
+      </section>
     </div>
   );
 };
