@@ -1,13 +1,31 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase.js";
 import "./LoginStyles.css"
+import { useSelector, useDispatch } from 'react-redux'
+import { setAuthToken } from "../auth_token_store/auth_token_slice.js";
+import {useLocation, useNavigate} from "react-router-dom";
 
 function LoginPage() {
 
     const [password, setPassword] = useState('');
     const [email, setEmail] = useState('');
     const [login_error, setLoginError] = useState('');
+    const dispatch = useDispatch();
+    const { is_logged_in } = useSelector((state) => state.authTokenSlice);
+    const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (is_logged_in) {
+
+            // Get route redirected from
+            const from = location.state?.from || "/";
+
+            navigate(from, { replace: true });
+
+        }
+    }, [is_logged_in, navigate, location]);
 
     const submitCredentials = async (e) => {
         e.preventDefault();
@@ -18,8 +36,14 @@ function LoginPage() {
             const user = auth.currentUser;
 
             if (user) {
-              const token = await user.getIdToken();
-              console.log(token);
+                const token = await user.getIdToken();
+
+                const state_change = {
+                    access_token: token
+                };
+
+                dispatch(setAuthToken(state_change));
+
             }
 
         } catch (err) {

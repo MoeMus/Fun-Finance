@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from services import ai_service
+from backend.services import ai_service
 
 calendar_api_route = Blueprint('calendar', __name__, url_prefix='/calendar')
 

@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from routes import user_controllers, calendar_controllers, authentication_controllers
+from backend.routes import user_controllers, calendar_controllers, authentication_controllers
 
 app = Flask(__name__)
 CORS(app)
