@@ -36,7 +36,7 @@
   content: "";
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url('/scale-pattern.png');
+  background-image : url('/scale-pattern.png');
   background-size: 150px; /* Adjust size to match the desired look */
   background-repeat: repeat;
   opacity: 0.4;
@@ -133,6 +133,9 @@
 
 /* Target the image you already gave className="overlay-image" */
 .dragon-mood-display .overlay-image {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
   width: 100%;
   height: 100%;
   display: block;
@@ -146,6 +149,9 @@
 
 /* Foreground image (on top) */
 .foreground-image {
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
   position: absolute;
   bottom: 0;
   left: 50%;
