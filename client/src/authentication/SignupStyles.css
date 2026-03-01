@@ -35,7 +35,7 @@
 
 .dv-title {
   margin: 0;
-  font-family: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-family: 'BoldPixels', sans-serif;
   font-size: clamp(28px, 4.8vw, 64px);
   letter-spacing: 0.02em;
   color: #0b5bd3;
@@ -99,7 +99,6 @@
 
 .dv-card-title {
   margin: 0 0 46px;
-  font-family: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: clamp(22px, 3.2vw, 40px);
 }
 
