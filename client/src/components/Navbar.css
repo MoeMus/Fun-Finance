@@ -2,30 +2,36 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 4rem;
-  background: #fff;
+  padding: 1vh 4vw;
+  background: #ffffff; /* Explicit solid white background */
   color: #0047AB;
   font-family: 'BoldPixels', sans-serif;
   border-bottom: 4px solid #f0f0f0;
+  height: 8vh;
+  min-height: 60px;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative; /* Ensure it stays on its own layer */
+  z-index: 10; /* Keep it above the scale pattern in the container below */
 }
 
 .nav-logo {
-  font-size: 3rem;
+  font-size: min(3rem, 4vh); /* Scale font based on smallest dimension */
   font-weight: bold;
 }
 
 .nav-links {
   display: flex;
-  gap: 3rem;
+  gap: 3vw;
 }
 
 .nav-item {
   text-decoration: none;
   color: #000;
-  font-size: 1.5rem;
+  font-size: min(1.5rem, 2vh);
   transition: color 0.2s;
-  padding-bottom: 4px;
-  border-bottom: 6px solid transparent;
+  padding-bottom: 0.5vh;
+  border-bottom: 0.6vh solid transparent;
 }
 
 .nav-item.active {
@@ -36,3 +42,6 @@
 .nav-item:hover {
   color: #0047AB;
 }
+
+
+
