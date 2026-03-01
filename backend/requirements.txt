@@ -9,6 +9,10 @@ google-genai==1.65.0
 # Database (Firebase)
 firebase-admin==7.2.0
 
+# Calendar Utilities
+icalendar==6.1.1
+python-dateutil==2.9.0.post0
+
 # Utils
 requests==2.32.3
 

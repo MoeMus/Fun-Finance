@@ -1,4 +1,4 @@
-import PredictiveDashboard from './components/PredictiveDashboard';
+import CalendarView from './components/CalendarView';
 import DragonDashboard from './components/DragonDashboard';
 import './App.css';
 import { Route, Routes } from "react-router-dom";
@@ -15,7 +15,7 @@ function App() {
     <div className="app-main">
       <Routes>
         <Route path={"/"} element={ <ProtectedRoute protected_component={ <DragonDashboard /> } isLoggedIn={is_logged_in} /> } />
-        <Route path={"/calendar"} element={ <ProtectedRoute protected_component={ <PredictiveDashboard /> } isLoggedIn={is_logged_in} /> } />
+        <Route path={"/calendar"} element={ <ProtectedRoute protected_component={ <CalendarView /> } isLoggedIn={is_logged_in} /> } />
         <Route path={"/login"} element={ <LoginPage /> } />
         <Route path={"/signup"} element={ <SignupPage /> } />
         <Route path={"/dragon-create"} element={<ProtectedRoute protected_component={ <DragonCreationPage /> } isLoggedIn={is_logged_in} /> } />

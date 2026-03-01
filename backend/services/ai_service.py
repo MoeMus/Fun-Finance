@@ -58,8 +58,10 @@ def analyze_calendar_events(events):
     """
 
     try:
+        # Using Gemini 1.5 Flash for high rate limits (1,500 requests per day)
+        # This fixes the 429 RESOURCE_EXHAUSTED error
         response = client.models.generate_content(
-            model="gemini-3-flash-preview",
+            model="gemini-1.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 system_instruction="You are a behavioral financial AI. You analyze calendar events to predict spending and simulate the growth/mood of a digital dragon pet.",
