@@ -17,26 +17,25 @@ function DragonDashboard() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // FORCE FETCH if data is missing name, even if Redux thinks it's "loaded"
   useEffect(()=>{
-    if (!is_dragon_loaded) {
+    if (!is_dragon_loaded || !dragon || !dragon.name) {
       getDragonData();
     }
     get_dead_dragons();
   }, []);
 
   useEffect(()=>{
-    if (dragon) {
+    if (dragon && dragon.mood) {
       updateMoodMapFromObject();
     }
   }, [dragon])
 
   function updateMoodMapFromObject() {
     const moodObj = dragon.mood;
-
     if (moodObj) {
       setActiveMaintenanceMoods(() => {
         const newMap = new Map();
-
         Object.entries(moodObj).forEach(([key, value]) => {
           if (value === true) {
             newMap.set(key, true);
@@ -48,93 +47,145 @@ function DragonDashboard() {
   }
 
   const getDragonData = async () => {
+    if (!access_token) {
+      navigate('/login', { replace: true });
+      return;
+    }
 
-    const response = await fetch('http://127.0.0.1:5000/dragon/get', {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${access_token}`
+    try {
+      console.log("DASHBOARD: Fetching dragon data...");
+      const response = await fetch('http://127.0.0.1:5000/dragon/get', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${access_token}`
+        }
+      });
+
+      const data = await response.json();
+
+      // AUTH CHECK: Handle token expiration
+      if (response.status === 401 || (data.error && data.error.includes("Token expired"))) {
+        console.warn("SESSION EXPIRED: Redirecting to login...");
+        dispatch(removeAuthToken());
+        navigate('/login', { replace: true });
+        return;
       }
-    });
 
-    const dragon_data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || `Server error: ${response.status}`);
+      }
 
-    dispatch(setDragon({dragon: dragon_data}));
+      if (!data || Object.keys(data).length === 0) {
+        console.warn("DASHBOARD: No dragon found for this user.");
+        navigate('/create-dragon', { replace: true });
+        return;
+      }
 
+      dispatch(setDragon({dragon: data}));
+    } catch (err) {
+      console.error("Dashboard error:", err);
+      setError(err.message);
+    }
   }
 
   const updateDragon = async (QueryFunction, action) => {
     const img = document.getElementById("dragonImage");
     const original_src = img.src;
     if (action === 'feed') {
-      img.src = '../../public/SunConureEating2_97c55283-bf0e-4587-8ed3-2e748f642f66.gif'
+      img.src = '/SunConureEating2_97c55283-bf0e-4587-8ed3-2e748f642f66.gif'
     }
     if (action === 'wash') {
-      img.src = '../../public/bird-shaking-off.gif'
+      img.src = '/bird-shaking-off.gif'
     }
     if (action === 'pet') {
-      img.src = '../../public/pigeon-pigeon-petting.gif'
+      img.src = '/pigeon-pigeon-petting.gif'
     }
     if (action === 'play') {
-      img.src = '../../public/b6JWBih.gif'
+      img.src = '/b6JWBih.gif'
     }
     try {
       const dragon_data = await QueryFunction(access_token);
+      
+      if (dragon_data?.error && dragon_data.error.includes("Token expired")) {
+        dispatch(removeAuthToken());
+        navigate('/login', { replace: true });
+        return;
+      }
+
       dispatch(setDragon({dragon: dragon_data}));
     } catch (err) {
-      setError(err);
+      setError(err.message);
     }
 
     img.src = original_src;
   }
 
   const bury_dragon = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/dragon/bury', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      });
 
-    const response = await fetch('http://127.0.0.1:5000/dragon/bury', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${access_token}`
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to bury dragon');
+      } else {
+        dispatch(removeDragon());
+        navigate('/create-dragon', {replace: true});
       }
-    });
-
-    if (!response.ok) {
-      const error_msg = await response.json();
-      setError(error_msg.error)
-    } else {
-      dispatch(removeDragon);
-      navigate('/create-dragon', {replace: true});
+    } catch (err) {
+      setError(err.message);
     }
-
   }
 
   const get_dead_dragons = async () => {
-    const response = await fetch('http://127.0.0.1:5000/dragon/dead', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${access_token}`
+    try {
+      const response = await fetch('http://127.0.0.1:5000/dragon/dead', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${access_token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to fetch dead dragons');
+      } else {
+        setDeadDragons(data);
       }
-    });
-
-    if (!response.ok) {
-      const error_msg = await response.json();
-      setError(error_msg.error);
-    } else {
-      const dead_dragons = await response.json();
-      setDeadDragons(prevState => [ ...dead_dragons])
+    } catch (err) {
+      setError(err.message);
     }
-
   }
 
-  if (!dragon) {
+  // UPDATED LOADING LOGIC: Show error message if it exists, otherwise show loading
+  if (!dragon || !dragon.name) {
     return (
       <div className="dragon-vault-page">
         <Navbar />
-        <main className="dragon-main-container">Loading...</main>
+        <main className="dragon-main-container">
+          <div className="loading-status-box">
+            {error ? (
+              <div className="error-display">
+                <h2 className="error-title">BATTLE ERROR</h2>
+                <p>{error}</p>
+                <button className="action-btn" onClick={() => getDragonData()}>RETRY</button>
+              </div>
+            ) : (
+              <div className="pixel-spinner">
+                <p>SUMMONING DRAGON...</p>
+              </div>
+            )}
+          </div>
+        </main>
       </div>
     );
   }
-
-  if (!dragon) return <div className="loading-state">No dragon found. Go to creation!</div>;
-
 
   return (
     <div className="dragon-vault-page">
@@ -145,48 +196,37 @@ function DragonDashboard() {
           <div className="stage-split">
             <div className="dragon-scene-view">
               <div className="dragon-mood-display">
-                <img src="../../public/Sunset.png" alt={"sunset"} className="overlay-image"/>
-                {deadDragons.length > 0 ? <img className={"grave-stone"} src={'../../public/Gravestone.png'} alt={"gravestone"} /> : null }
+                <img src="/Sunset.png" alt={"sunset"} className="overlay-image"/>
+                {deadDragons.length > 0 ? <img className={"grave-stone"} src={'/Gravestone.png'} alt={"gravestone"} /> : null }
                 {dragon.current_health > 0 ?
-
                   <>
                     {dragon.evolution === 'egg' ?
-                      <img id={"dragonImage"} src="../../public/Egg.png" alt={"egg"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="/Egg.png" alt={"egg"} className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'baby' ?
-                      <img id={"dragonImage"} src="../../public/dragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="/dragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'teen' ?
-                      <img id={"dragonImage"} src="../../public/Medium%20Dragon%20FINAL.png" alt={"egg"}
+                      <img id={"dragonImage"} src="/Medium Dragon FINAL.png" alt={"teen"}
                            className="foreground-image"/> : null
                     }
                     {dragon.evolution === 'adult' ?
-                      <img id={"dragonImage"} src="../../public/Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
+                      <img id={"dragonImage"} src="/Big boy Dragon.png" alt={"adult"} className="foreground-image"/> : null
                     }
                   </>
                   :
                   <>
-                    {dragon.evolution === 'egg' ?
-                      <img src="../../public/DEADEgg.png" alt={"dead egg"} className="foreground-image"/> : null
-                    }
-                    {dragon.evolution === 'baby' ?
-                      <img src="../../public/DEADdragonbaby.png" alt={"dragon baby"} className="foreground-image"/> : null
-                    }
-                    {dragon.evolution === 'teen' ?
-                      <img src="../../public/DEAD%20Medium%20Dragon%20FINAL.png" alt={"egg"}
-                           className="foreground-image"/> : null
-                    }
-                    {dragon.evolution === 'adult' ?
-                      <img src="../../public/DEAD%20Big%20boy%20Dragon.png" alt={"egg"} className="foreground-image"/> : null
-                    }
+                    {dragon.evolution === 'egg' ? <img src="/DEADEgg.png" alt={"dead egg"} className="foreground-image"/> : null}
+                    {dragon.evolution === 'baby' ? <img src="/DEADdragonbaby.png" alt={"dead baby"} className="foreground-image"/> : null}
+                    {dragon.evolution === 'teen' ? <img src="/DEAD Medium Dragon FINAL.png" alt={"dead teen"} className="foreground-image"/> : null}
+                    {dragon.evolution === 'adult' ? <img src="/DEAD Big boy Dragon.png" alt={"dead adult"} className="foreground-image"/> : null}
                   </>
                 }
-
               </div>
             </div>
 
             <div className="dragon-stats-panel">
-              <h2 className="dragon-type-title">{dragon.evolution.toUpperCase()} DRAGON</h2>
+              <h2 className="dragon-type-title">{(dragon.evolution || 'unknown').toUpperCase()} DRAGON</h2>
 
               {dragon.current_health > 0 ?
                 <>
@@ -229,7 +269,6 @@ function DragonDashboard() {
           </div>
 
           <footer className="dragon-action-bar">
-
             {dragon.current_health > 0 ?
               <>
                 <button
@@ -258,15 +297,8 @@ function DragonDashboard() {
                 </button>
               </>
               :
-              <button
-                className={`action-btn`}
-                onClick={() => bury_dragon()}
-              >
-                BURY
-              </button>
+              <button className={`action-btn`} onClick={() => bury_dragon()}>BURY</button>
             }
-
-
           </footer>
         </div>
       </main>

@@ -48,12 +48,16 @@ def analyze_calendar_events(events):
     - Sit-down Dinner: $40-$90 per person
     - Transit/Parking: $5-$15
     - Tipping is 15-30%.
+    - Real Estate: Mansions are $5M+, Condos $800k+, Rent $2500+.
+    - Vehicles: Used cars $15k+, New $40k+, Gas $2.50/L.
 
     TASK:
-    Analyze the provided calendar events. Identify which entries are "Spending Triggers." 
-    If an event is purely digital or at home (e.g., "Zoom Call", "Clean Room"), predictedCost is 0.
-    If an event involves leaving the house or social pressure (e.g., "Meet Mike", "Study @ Library"), 
-    predict the most likely cost in 2026 CAD including transportation and incidental snacks.
+    Analyze the provided calendar events. Identify which entries are "Spending Triggers."
+    A spending trigger is ANY event that implies a financial transaction, commercial activity, purchase, or service.
+
+    - If an event is purely non-commercial (e.g. "Sleep", "Clean Room", "Walk in the park"), predictedCost is 0.
+    - If an event implies a purchase or service (e.g. "Buy a car", "Fix sink", "Grocery Run"), predict the realistic 2026 CAD cost.
+    - If an event involves leaving the house for social reasons (e.g. "Meet Mike", "Study @ Library"), predict the likely cost including transportation and incidental spending.
 
     RULES FOR THE FINANCE-DRAGON EVOLUTION (Weekly Budget: $150):
     - IF Status is 'over' budget:
@@ -134,7 +138,7 @@ def resolve_day_agent(actual_spending, predicted_spending, events_today, current
         "1. Compare Actual Spending vs Predicted Spending.\n"
         "2. If Actual > Predicted: Call tool with negative hp_delta and mood 'sad'.\n"
         "3. If Actual <= Predicted: Call tool with positive hp_delta and mood 'happy'.\n"
-        "4. Your 'insight' should be a punchy message about today's spending habits in Vancouver."
+        "4. Your 'insight' MUST address the user directly (using 'you', 'your') and be a punchy message about their spending today."
     )
     
     prompt = (

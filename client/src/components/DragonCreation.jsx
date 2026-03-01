@@ -60,7 +60,7 @@ function DragonCreationPage() {
           <div className="stage-split">
             <div className="dragon-scene-view">
               <div className="dragon-mood-display-creation" >
-                <img className="dragon-egg" src={'../../public/Egg.png'} alt={"Dragon Egg"} />
+                <img className="dragon-egg" src={'/Egg.png'} alt={"Dragon Egg"} />
               </div>
             </div>
 
