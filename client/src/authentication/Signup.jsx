@@ -69,12 +69,12 @@ function SignupPage() {
 
   return (
     <>
-      <div className="dv-page">
+      <div className="dv-page dragon-vault-signup-page">
       <header className="dv-header">
         <h1 className="dv-title">Dragon vault</h1>
       </header>
 
-        <main className="dv-hero">
+        <main className="dv-hero dragon-main-container-with-scales">
           <div className="dv-card">
             <h2 className="dv-card-title">Sign Up</h2>
 

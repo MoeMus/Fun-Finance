@@ -14,6 +14,25 @@
   justify-content: center;
 }
 
+.dragon-vault-signup-page {
+  --nav-blue: #0047AB;
+  --bg-orange: #FF8C00;
+  --bg-yellow: #FFD700;
+  --panel-blue: #D9E9F0;
+  --text-blue: #003366;
+  --btn-blue: #0056b3;
+
+  font-family: 'BoldPixels', sans-serif;
+  min-height: 100vh;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+
+  /* Pixel-font smoothing fixes */
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+}
+
 .dv-title {
   margin: 0;
   font-family: "Press Start 2P", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
@@ -29,20 +48,57 @@
   display: grid;
   place-items: center;
   padding: 40px 18px 64px;
-  /* base */
-  background-color: #f6b400;
-  /* scale pattern layers */
-  background-image:
-    radial-gradient(circle at 50% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),
-    radial-gradient(circle at 0% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),
-    radial-gradient(circle at 50% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),
-    radial-gradient(circle at 0% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),
-    radial-gradient(circle at 50% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px),
-    radial-gradient(circle at 0% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px);
-  background-size: 110px 90px;
-  background-position: 0 0, 55px 0, 0 0, 55px 0, 0 0, 55px 0;
-  background-repeat: repeat;
+  /*!* base *!*/
+  /*background-color: #f6b400;*/
+  /*!* scale pattern layers *!*/
+  /*background-image:*/
+  /*  radial-gradient(circle at 50% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),*/
+  /*  radial-gradient(circle at 0% 60%, rgba(255, 210, 80, 0.95) 0 24px, rgba(0,0,0,0) 25px),*/
+  /*  radial-gradient(circle at 50% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),*/
+  /*  radial-gradient(circle at 0% 60%, rgba(215, 86, 20, 0.92) 0 30px, rgba(0,0,0,0) 31px),*/
+  /*  radial-gradient(circle at 50% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px),*/
+  /*  radial-gradient(circle at 0% 62%, rgba(120, 16, 10, 0.70) 0 34px, rgba(0,0,0,0) 35px);*/
+  /*background-size: 110px 90px;*/
+  /*background-position: 0 0, 55px 0, 0 0, 55px 0, 0 0, 55px 0;*/
+  /*background-repeat: repeat;*/
   border-top: 1px solid rgba(0,0,0,0.08);
+}
+
+/* Main Container with Scale Pattern */
+.dragon-main-container-with-scales {
+  flex-grow: 1;
+  background: linear-gradient(135deg, var(--bg-orange), var(--bg-yellow));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+
+  position: relative;
+  overflow: hidden;
+}
+
+.dragon-main-container-with-scales::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image: radial-gradient(
+    circle at 100% 100%,
+    transparent 50%,
+    rgba(0,0,0,0.1) 50%,
+    rgba(0,0,0,0.1) 60%,
+    transparent 60%
+  );
+  background-size: 40px 40px;
+  opacity: 0.3;
+
+  z-index: 0;
+  pointer-events: none;
+}
+
+.dragon-main-container-with-scales > * {
+  position: relative;
+  z-index: 1;
 }
 
 .dv-card {
