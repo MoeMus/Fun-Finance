@@ -23,6 +23,7 @@ def create_dragon(uid: str, dragon_name: str):
         "current_health": 50,
         "date_of_birth": current_timestamp,
         "evolution": DragonEvolutionEnum.EGG,
+        "next_evolution": 4,
         "user_id": uid,
         "mood": {
             "happy": True,
@@ -51,8 +52,8 @@ def level_up_dragon(uid: str):
 
     if dragon["level"] % 4 == 0 and dragon["level"] <= 12:
 
-        dragon["evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])
-
+        dragon["evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[0]
+        dragon["next_evolution"] = DragonEvolutionEnum.get_next_evolution(evolution_type=["evolution"])[1]
         dragon["max_health"] = 200 + 50 / (dragon["level"] - 12)
         dragon["current_health"] = dragon["max_health"]
 

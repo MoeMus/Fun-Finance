@@ -12,6 +12,8 @@ def create_dragon_controller():
     uid = auth_service.get_uid_from_token()
     dragon_name = request.get_json()["dragon_name"]
 
+    if dragon_name is None:
+        return jsonify({"error": "No dragon name provided"}), 400
     created_dragon = dragon_service.create_dragon(uid, dragon_name)
 
     return jsonify(created_dragon), 201
