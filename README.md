@@ -1,12 +1,11 @@
 # Dragon Vault
 
 ### Winner of the Software Systems Student Society Award
-https://devpost.com/software/dragon-vault 
+https://devpost.com/software/dragon-vault  
 
+&nbsp;
 
-# Dragon Vault
-
-A tomogachi-like website where you must save money to keep your dragon from becoming sad
+Dragon Vault is a tomogachi-like website where you must save money to keep your dragon from becoming sad
 
 ## Backend Setup
 
